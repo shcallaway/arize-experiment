@@ -118,6 +118,18 @@ python -m arize_experiment.cli run --help
 7. Install dependencies: `pip install -e .`
 8. Create `.env` file with your Arize API key and space ID
 
+### Code Formatting
+
+This project uses Black for code formatting. Black is already included in the development dependencies.
+
+```bash
+# Format all Python files in the project
+black .
+
+# Check formatting without making changes
+black . --check
+```
+
 ### Switching Python Versions
 
 If you need to switch Python versions:

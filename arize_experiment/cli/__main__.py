@@ -1,5 +1,5 @@
 """
-Main entry point for arize-experiment CLI.
+Main entry point for CLI when run as a module.
 """
 
 from arize_experiment.cli.commands import main
