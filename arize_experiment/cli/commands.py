@@ -4,8 +4,8 @@ CLI command implementations for arize-experiment.
 
 import sys
 from typing import Tuple
-
 import click
+import logging
 
 from arize_experiment.client.arize import create_client, ClientError
 from arize_experiment.config.env import get_arize_config, EnvironmentError
@@ -13,9 +13,8 @@ from arize_experiment.config.experiment import create_experiment_config
 from arize_experiment.experiments.base import ExperimentError
 from arize_experiment.experiments.dataset import DatasetExperiment
 from arize_experiment.cli.options import experiment_options, parse_tags
-from arize_experiment.utils.logging import configure_logging, get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -27,20 +26,12 @@ def cli():
     for more information.
     """
     # Configure logging early
-    configure_logging()
-    print("CLI initialized")  # Basic print for testing
-
-
-@cli.command()
-def test():
-    """Test command to verify CLI functionality."""
-    print("Test command executed")
-    click.echo("Click echo test")
-    click.secho("Click secho test", fg="green")
-    logger.debug("Debug log test")
-    logger.info("Info log test")
-    logger.warning("Warning log test")
-    logger.error("Error log test")
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    logger.debug("CLI initialized")
 
 
 @cli.command()
@@ -57,24 +48,24 @@ def run(name: str, dataset: str, description: str, tag: Tuple[str, ...]):
     Tags can be added using the --tag option multiple times:
         $ arize-experiment run -n exp-1 -d data-1 -t type=test -t env=prod
     """
-    print("Starting experiment run...")  # Basic print for testing
+    logger.info("Starting experiment run")
 
     try:
         # Parse tags if provided
         tags = parse_tags(tag)
         if tags:
-            print(f"Using tags: {tags}")  # Basic print for testing
+            logger.info(f"Using tags: {tags}")
 
         # Get Arize configuration
-        print("Loading Arize configuration...")  # Basic print for testing
+        logger.info("Loading Arize configuration")
         arize_config = get_arize_config()
 
         # Create Arize client
-        print("Initializing Arize client...")  # Basic print for testing
+        logger.info("Initializing Arize client")
         client = create_client(arize_config)
 
         # Create experiment configuration
-        print("Creating experiment configuration...")  # Basic print for testing
+        logger.info("Creating experiment configuration")
         config = create_experiment_config(
             name=name,
             dataset=dataset,
@@ -83,30 +74,24 @@ def run(name: str, dataset: str, description: str, tag: Tuple[str, ...]):
         )
 
         # Create and run experiment
-        print(f"Running experiment '{name}'...")  # Basic print for testing
+        logger.info(f"Running experiment '{name}'")
         experiment = DatasetExperiment(client, config)
         experiment_id = experiment.run()
 
         # Success output
-        print(f"\nSuccessfully started experiment '{name}'")  # Basic print for testing
-        print(f"Experiment ID: {experiment_id}")  # Basic print for testing
-        print("View results in the Arize UI")  # Basic print for testing
+        click.secho(f"\nSuccessfully started experiment '{name}'", fg="green")
+        click.echo(f"Experiment ID: {experiment_id}")
+        click.echo("View results in the Arize UI")
 
     except (EnvironmentError, ClientError) as e:
-        print(
-            f"\nConfiguration error: {str(e)}", file=sys.stderr
-        )  # Basic print for testing
+        click.secho(f"\nConfiguration error: {str(e)}", fg="red", err=True)
         sys.exit(1)
     except ExperimentError as e:
-        print(
-            f"\nExperiment error: {str(e)}", file=sys.stderr
-        )  # Basic print for testing
+        click.secho(f"\nExperiment error: {str(e)}", fg="red", err=True)
         sys.exit(1)
     except Exception as e:
         logger.error("Unexpected error", exc_info=True)
-        print(
-            f"\nUnexpected error: {str(e)}", file=sys.stderr
-        )  # Basic print for testing
+        click.secho(f"\nUnexpected error: {str(e)}", fg="red", err=True)
         sys.exit(1)
 
 
@@ -115,7 +100,7 @@ def main():
     try:
         cli()
     except Exception as e:
-        print(f"Critical error: {str(e)}", file=sys.stderr)  # Basic print for testing
+        click.secho(f"Critical error: {str(e)}", fg="red", err=True)
         sys.exit(1)
 
 

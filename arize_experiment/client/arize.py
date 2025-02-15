@@ -3,11 +3,11 @@ Arize client initialization and management.
 """
 
 from arize.pandas.logger import Client
+import logging
 
 from arize_experiment.config.env import ArizeConfig
-from arize_experiment.utils.logging import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ClientError(Exception):

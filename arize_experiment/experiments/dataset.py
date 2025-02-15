@@ -3,13 +3,13 @@ Dataset-based experiment implementation.
 """
 
 import traceback
+import logging
 from arize.pandas.logger import Client
 
 from arize_experiment.config.experiment import ExperimentConfig
 from arize_experiment.experiments.base import Experiment, ExperimentError
-from arize_experiment.utils.logging import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class DatasetExperiment(Experiment):
