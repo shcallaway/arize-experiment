@@ -1,180 +1,146 @@
 # Arize Experiment
 
-A Python script that creates and runs an experiment on Arize.
+A CLI tool for creating and running experiments on Arize.
 
-## Features
+## Requirements
 
-TODO
+This tool requires Python 3.10 (Python 3.11 and above are not supported due to dependency constraints). We recommend using `pyenv` to manage Python versions, similar to how `nvm` works for Node.js.
 
-## Setup Instructions
-
-### 1. Prerequisites
-
-Before starting, ensure you have:
-
-- Python 3.9 or higher installed (tested with Python 3.9.6)
-- Arize API key
-
-### 2. Development Setup
-
-The easiest way to set up the development environment is using the provided setup script:
+### Installing pyenv
 
 ```bash
-# Make the setup script executable
-chmod +x setup_dev.sh
+# Using Homebrew
+brew install pyenv
 
-# Run the setup script
-./setup_dev.sh
+# Add to your shell (add these to ~/.zshrc)
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+
+# Reload shell
+source ~/.zshrc
 ```
 
-This will:
+### Setting up Python 3.10 with pyenv
 
-- Create a Python virtual environment
-- Install all dependencies including development tools (pytest, black, flake8)
-- Create a .env file from the example template
+```bash
+# List available Python versions
+pyenv install --list | grep " 3.10"
 
-Alternatively, you can set up manually:
+# Install Python 3.10
+pyenv install 3.10.13
+
+# Set local Python version (for this project)
+pyenv local 3.10.13
+
+# Verify Python version
+python --version  # Should show Python 3.10.13
+```
+
+### Troubleshooting pyenv
+
+If you encounter issues with pyenv:
+
+1. If `python` command is not found:
+
+```bash
+# Rehash pyenv shims
+pyenv rehash
+
+# Ensure pyenv is initialized in your shell
+eval "$(pyenv init -)"
+eval "$(pyenv init --path)"
+```
+
+2. If you see "python-build: definition not found":
+
+```bash
+# Update pyenv and try again
+pyenv update
+```
+
+3. For immediate access without shell restart, use the full path:
+
+```bash
+~/.pyenv/versions/3.10.13/bin/python
+```
+
+## Installation
 
 ```bash
 # Create virtual environment
-python3 -m venv venv
+python -m venv venv
 
 # Activate virtual environment
 source venv/bin/activate
 
-# Upgrade pip to latest version
-python -m pip install --upgrade pip
-
-# Install dependencies and development tools
-python -m pip install -r requirements.txt pytest-asyncio
-python -m pip install -e .
+# Install package
+pip install -e .
 ```
 
-### 3. Running Tests
+## Authentication
 
-The project uses pytest with async support for testing. To run the tests:
+You'll need an Arize API key and space ID to use this tool. Create a `.env` file in the project root and add your API key and space ID:
 
 ```bash
-# Activate virtual environment if not already active
-source venv/bin/activate
-
-# Run tests with verbose output
-python -m pytest tests/ -v
-
-# Run tests with more detailed output
-python -m pytest tests/ -vv
-
-# Run a specific test file
-python -m pytest tests/test_cache_manager.py -v
-```
-
-Note: The tests use mocking extensively, so no API keys or vector store setup is required to run them.
-
-### 5. Environment Configuration
-
-Create a `.env` file in the project root directory with the following settings:
-
-```env
 ARIZE_API_KEY=
+ARIZE_SPACE_ID=
 ```
 
-## Running the Script
+You can find your API key and space ID in your Arize account settings.
 
-1. Ensure your virtual environment is activated:
+## Usage
+
+The CLI provides a single command `run` that creates and runs an experiment on Arize:
 
 ```bash
-source venv/bin/activate
+# Create and run an experiment
+python -m arize_experiment.cli run --name my-experiment --dataset my-dataset
+
+# Get help
+python -m arize_experiment.cli --help
+python -m arize_experiment.cli run --help
 ```
 
-2. Start the script:
+### Options
 
-```bash
-python -m arize-experiment.cli
-```
+- `--name`, `-n`: Name of the experiment to create (required)
+- `--dataset`, `-d`: Name of the dataset to use for the experiment (required)
 
 ## Development
 
-### Code Linting
+1. Clone the repository
+2. Install pyenv following the instructions above
+3. Install Python 3.10: `pyenv install 3.10.13`
+4. Set local Python version: `pyenv local 3.10.13`
+5. Create a virtual environment: `python -m venv venv`
+6. Activate the virtual environment: `source venv/bin/activate`
+7. Install dependencies: `pip install -e .`
+8. Create `.env` file with your Arize API key and space ID
 
-The project uses black for code formatting and flake8 for style checking:
+### Switching Python Versions
 
-```bash
-# Format code with black
-black .
-
-# Check code style with flake8
-flake8
-```
-
-Configuration files:
-
-- `.flake8`: Flake8 configuration with 88 character line length to match black
-- `pyproject.toml`: Black configuration and build settings
-
-### Running Tests
-
-The project uses pytest with async support for testing:
-The project uses pytest with async support for testing:
+If you need to switch Python versions:
 
 ```bash
-# Run tests with verbose output
-python -m pytest tests/ -v
+# List installed versions
+pyenv versions
 
-# Run tests with more detailed output
-python -m pytest tests/ -vv
+# Install a different version
+pyenv install 3.10.13
 
-# Run a specific test file
-python -m pytest tests/test_cache_manager.py -v
+# Switch version for this project
+pyenv local 3.10.13
+
+# Check Python version
+python --version  # Should show Python 3.10.13
+
+# Create new venv with different version
+rm -rf venv
+python -m venv venv
+source venv/bin/activate
+pip install -e .
+
+# To switch back to the default Python version
+pyenv local system
 ```
-
-Note: The tests use mocking extensively, so no API keys or vector store setup is required to run them.
-
-## Exiting
-
-To deactivate the virtual environment when you're done:
-
-```bash
-deactivate
-```
-
-## Troubleshooting
-
-### Environment Setup Issues
-
-1. If you see "command not found: python", try using `python3` instead
-2. For virtual environment issues:
-   ```bash
-   # If venv exists but seems corrupted
-   rm -rf venv
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-3. If you get pip-related errors:
-   ```bash
-   # Upgrade pip to the latest version
-   python -m pip install --upgrade pip
-   ```
-
-### Testing Issues
-
-1. If tests fail with missing pytest-asyncio:
-   ```bash
-   python -m pip install pytest-asyncio
-   ```
-2. If you get SSL-related warnings with urllib3:
-   - This is a known issue with LibreSSL on some systems
-   - The warnings can be safely ignored for development
-3. For test failures:
-   - Run tests with -vv flag for detailed output: `python -m pytest tests/ -vv`
-   - Ensure you're using Python 3.9 or higher
-   - Make sure all test dependencies are installed
-
-## License
-
-GNU General Public License v3.0 (GPLv3)
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.

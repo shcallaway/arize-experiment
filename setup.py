@@ -25,7 +25,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "arize-experiment=arize-experiment.cli:main",
+            "arize-experiment=arize_experiment.cli:main",
         ],
     },
 )
