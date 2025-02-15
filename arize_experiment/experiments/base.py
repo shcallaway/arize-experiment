@@ -46,18 +46,3 @@ class Experiment(ABC):
             ExperimentError: If experiment creation fails
         """
         pass
-
-    def get_status(self) -> Optional[str]:
-        """Get the current status of the experiment.
-
-        Returns:
-            Optional[str]: Current experiment status if available
-        """
-        if not self.experiment_id:
-            return None
-
-        try:
-            return self.client.get_experiment_status(self.experiment_id)
-        except Exception as e:
-            logger.error(f"Failed to get experiment status: {e}")
-            return None

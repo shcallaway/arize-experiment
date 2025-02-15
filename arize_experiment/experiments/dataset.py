@@ -2,7 +2,6 @@
 Dataset-based experiment implementation.
 """
 
-import traceback
 import logging
 from arize.pandas.logger import Client
 
@@ -52,7 +51,6 @@ class DatasetExperiment(Experiment):
                 self.experiment_id = self.client.create_experiment(**config_dict)
             except Exception as e:
                 logger.error(f"Arize client error: {str(e)}")
-                logger.debug(f"Error details: {traceback.format_exc()}")
                 raise ExperimentError(f"Arize client error: {str(e)}") from e
 
             if not self.experiment_id:

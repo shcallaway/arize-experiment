@@ -69,14 +69,3 @@ def get_arize_config() -> ArizeConfig:
 
     logger.debug("Successfully loaded Arize configuration")
     return ArizeConfig(api_key=api_key, space_id=space_id)
-
-
-def get_log_level() -> str:
-    """Get configured log level from environment.
-
-    Returns:
-        String log level, defaults to "INFO"
-    """
-    level = os.getenv("LOG_LEVEL", "INFO")
-    logger.debug(f"Log level set to: {level}")
-    return level

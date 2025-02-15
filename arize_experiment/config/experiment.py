@@ -2,7 +2,7 @@
 Experiment configuration management for arize-experiment.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 import logging
 
@@ -60,13 +60,4 @@ def create_experiment_config(
         f"Creating experiment config: name={name}, dataset={dataset}, "
         f"description={description}, tags={tags}"
     )
-
-    config = ExperimentConfig(
-        name=name,
-        dataset=dataset,
-        description=description,
-        tags=tags,
-    )
-
-    logger.debug("Successfully created experiment configuration")
-    return config
+    return ExperimentConfig(name=name, dataset=dataset, description=description, tags=tags)
