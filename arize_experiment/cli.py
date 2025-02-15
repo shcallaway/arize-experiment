@@ -10,6 +10,7 @@ from arize_experiment.task import example_task
 from arize_experiment.config import get_arize_config, EnvironmentError
 from arize_experiment.config import create_experiment_config
 from arize_experiment.logging import get_logger, configure_logging
+from arize_experiment.evaluators.is_positive import is_positive
 
 logger = get_logger(__name__)
 
@@ -121,49 +122,139 @@ def run(
         client = create_client(arize_config)
         logger.debug("Client initialized successfully")
 
-        # Create experiment configuration
-        logger.debug("Creating experiment configuration")
-        # Convert evaluator tuple to list if provided
-        evaluators = list(evaluator) if evaluator else None
-        if evaluators:
-            logger.info(f"Using evaluators: {evaluators}")
-
-        # Use default dataset if none provided
-        dataset_id = dataset or arize_config.default_dataset
-        if not dataset_id:
+        # Check if dataset exists
+        dataset_name = dataset or arize_config.default_dataset
+        if not dataset_name:
             raise click.UsageError(
                 "No dataset specified. Either provide --dataset option "
                 "or set DATASET in your .env file"
             )
-        logger.debug(f"Using dataset: {dataset_id}")
+        
+        try:
+            logger.debug(f"Checking if dataset {dataset_name} exists")
+            client.get_dataset(space_id=arize_config.space_id, dataset_name=dataset_name)
+            logger.debug(f"Dataset {dataset_name} exists")
+        except Exception as e:
+            logger.error(f"Dataset {dataset_name} does not exist", exc_info=True)
+            raise click.UsageError(
+                f"Dataset '{dataset_name}' does not exist in space '{arize_config.space_id}'. "
+                "Please create the dataset first or use an existing dataset."
+            )
+
+        # Create experiment configuration
+        logger.debug("Creating experiment configuration")
+
+        # Map evaluator names to functions
+        evaluator_map = {
+            'is_positive': is_positive
+        }
+
+        # Convert evaluator names to functions
+        evaluators = []
+        if evaluator:
+            for eval_name in evaluator:
+                if eval_name in evaluator_map:
+                    evaluators.append(evaluator_map[eval_name])
+                else:
+                    raise click.UsageError(f"Unknown evaluator: {eval_name}")
+            logger.info(f"Using evaluators: {[e.__name__ for e in evaluators]}")
+
+        logger.debug(f"Using dataset: {dataset_name}")
 
         config = create_experiment_config(
             name=name,
-            dataset=dataset_id,
+            dataset=dataset_name,
             description=description,
             tags=tags,
-            evaluators=evaluators,
+            evaluators=[e.__name__ for e in evaluators] if evaluators else None,
         )
+        
         logger.debug(f"Created experiment config: {config}")
 
-        # Create and run experiment
-        logger.info(f"Starting experiment '{name}'")
-        # Get values from config
-        experiment_dict = config.to_dict()
-        logger.debug(f"Running experiment with config: {experiment_dict}")
-        
-        # Run experiment with named arguments matching API signature
-        dataset_id = experiment_dict['dataset']
-        logger.debug(f"Using dataset ID: {dataset_id}")
-        
-        client.run_experiment(
-            space_id=arize_config.space_id,
-            dataset_id=dataset_id,
-            task=example_task,
-            evaluators=experiment_dict.get('evaluators'),
-            experiment_name=experiment_dict['name']
-        )
-        click.secho(f"\nSuccessfully started experiment '{name}'", fg="green")
+        # Check if experiment exists
+        logger.debug(f"Checking if experiment '{name}' exists")
+        try:
+            client.get_experiment(
+                space_id=arize_config.space_id,
+                experiment_name=name,
+                dataset_name=dataset_name
+            )
+            # If we get here, experiment exists
+            logger.error(f"Experiment '{name}' already exists")
+            raise click.UsageError(
+                f"Experiment '{name}' already exists with dataset '{dataset_name}'. "
+                "Please use a different experiment name."
+            )
+        except RuntimeError as e:
+            # Get the original error message from the cause chain
+            cause = e.__cause__
+            if cause and isinstance(cause, Exception):
+                error_msg = str(cause).lower()
+            else:
+                error_msg = str(e).lower()
+                
+            if "already exists" in error_msg:
+                logger.error(f"Experiment '{name}' already exists", exc_info=True)
+                raise click.UsageError(
+                    f"Experiment '{name}' already exists with dataset '{dataset_name}'. "
+                    "Please use a different experiment name."
+                )
+            elif "not found" in error_msg or "does not exist" in error_msg:
+                # This is expected - experiment doesn't exist
+                logger.info(f"Creating new experiment '{name}'")
+                
+                # Get values from config
+                experiment_dict = config.to_dict()
+                logger.debug(f"Running experiment with config: {experiment_dict}")
+                
+                logger.info("Attempting to run experiment")
+                try:
+                    logger.debug("Calling run_experiment with parameters:")
+                    logger.debug(f"  space_id: {arize_config.space_id}")
+                    logger.debug(f"  dataset_name: {dataset_name}")
+                    logger.debug(f"  experiment_name: {experiment_dict['name']}")
+                    logger.debug(f"  evaluators: {experiment_dict.get('evaluators')}")
+                    
+                    try:
+                        client.run_experiment(
+                            space_id=arize_config.space_id,
+                            dataset_name=dataset_name,
+                            task=example_task,
+                            evaluators=evaluators,  # Pass the actual function list
+                            experiment_name=experiment_dict['name']
+                        )
+                    except RuntimeError as e:
+                        if "already exists" in str(e).lower():
+                            # Race condition - experiment was created between our check and creation
+                            logger.warning("Race condition detected - experiment already exists")
+                            raise click.UsageError(
+                                f"Experiment '{name}' already exists with dataset '{dataset_name}'. "
+                                "Please use a different experiment name."
+                            )
+                        raise  # Re-raise other runtime errors
+                    logger.info("Successfully called run_experiment")
+                    click.secho(f"\nSuccessfully started experiment '{name}'", fg="green")
+                except RuntimeError as e:
+                    if "already exists" in str(e).lower():
+                        # Race condition - experiment was created between our check and creation
+                        logger.warning("Race condition detected - experiment already exists")
+                        raise click.UsageError(
+                            f"Experiment '{name}' already exists with dataset '{dataset_name}'. "
+                            "Please use a different experiment name."
+                        )
+                    logger.error(f"Failed to run experiment: {str(e)}", exc_info=True)
+                    raise click.UsageError(f"Failed to run experiment: {str(e)}")
+                except Exception as e:
+                    logger.error(f"Failed to run experiment: {str(e)}", exc_info=True)
+                    raise click.UsageError(f"Failed to run experiment: {str(e)}")
+            else:
+                # Re-raise unexpected errors
+                logger.error(f"Unexpected error checking experiment: {error_msg}")
+                raise
+        except Exception as e:
+            # Log and re-raise any other unexpected errors
+            logger.error(f"Unexpected error checking experiment existence: {e}", exc_info=True)
+            raise
 
     except (EnvironmentError, ClientError) as e:
         click.secho(f"\nConfiguration error: {str(e)}", fg="red", err=True)

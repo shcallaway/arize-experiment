@@ -18,10 +18,7 @@ def is_positive(output):
         output (str): The text to evaluate
 
     Returns:
-        tuple: (score, label, explanation)
-            - score (int): 1 for successful evaluation
-            - label (str): One of "positive", "neutral", or "negative"
-            - explanation (str): The model's explanation for the classification
+        float: 1.0 for positive, 0.5 for neutral, 0.0 for negative
     """
     client = OpenAI()
 
@@ -45,22 +42,10 @@ def is_positive(output):
     # Get the label from the first choice
     label = response.choices[0].message.content.strip().lower()
 
-    # Get explanation with a follow-up call
-    explanation_response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a sentiment analysis assistant. "
-                "Explain your classification briefly.",
-            },
-            {"role": "user", "content": prompt},
-            {"role": "assistant", "content": label},
-            {"role": "user", "content": "Explain why you classified this as " + label},
-        ],
-        temperature=0,
-    )
-
-    explanation = explanation_response.choices[0].message.content.strip()
-
-    return (1, label, explanation)
+    # Convert label to score
+    if label == "positive":
+        return 1.0
+    elif label == "neutral":
+        return 0.5
+    else:  # negative
+        return 0.0
