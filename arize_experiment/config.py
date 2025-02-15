@@ -29,6 +29,7 @@ class ExperimentConfig:
     dataset: str
     description: Optional[str] = None
     tags: Optional[dict] = None
+    evaluators: Optional[list[str]] = None
 
     def to_dict(self) -> dict:
         """Convert configuration to dictionary for Arize client.
@@ -46,6 +47,9 @@ class ExperimentConfig:
 
         if self.tags:
             config["tags"] = self.tags
+            
+        if self.evaluators:
+            config["evaluators"] = self.evaluators
 
         logger.debug(f"Created experiment config: {config}")
         return config
@@ -79,7 +83,7 @@ def get_arize_config() -> ArizeConfig:
     space_id = os.getenv("ARIZE_SPACE_ID")
 
     logger.debug(f"Retrieved API key (length: {len(api_key) if api_key else 0})")
-    logger.debug(f"Retrieved space ID (length: {len(space_id) if space_id else 0})")
+    logger.debug(f"Retrieved space ID: {space_id}")
 
     if not api_key:
         msg = (
@@ -100,7 +104,10 @@ def get_arize_config() -> ArizeConfig:
         raise EnvironmentError(msg)
 
     logger.debug("Successfully loaded Arize configuration")
-    return ArizeConfig(api_key=api_key, space_id=space_id)
+    return ArizeConfig(
+        api_key=api_key,
+        space_id=space_id
+    )
 
 
 def create_experiment_config(
@@ -108,6 +115,7 @@ def create_experiment_config(
     dataset: str,
     description: Optional[str] = None,
     tags: Optional[dict] = None,
+    evaluators: Optional[list[str]] = None,
 ) -> ExperimentConfig:
     """Create a new experiment configuration.
 
@@ -116,12 +124,19 @@ def create_experiment_config(
         dataset: Name of the dataset to use
         description: Optional experiment description
         tags: Optional key-value pairs for experiment metadata
+        evaluators: Optional list of evaluator names to use
 
     Returns:
         ExperimentConfig instance with provided parameters
     """
     logger.debug(
         f"Creating experiment config: name={name}, dataset={dataset}, "
-        f"description={description}, tags={tags}"
+        f"description={description}, tags={tags}, evaluators={evaluators}"
     )
-    return ExperimentConfig(name=name, dataset=dataset, description=description, tags=tags)
+    return ExperimentConfig(
+        name=name,
+        dataset=dataset,
+        description=description,
+        tags=tags,
+        evaluators=evaluators
+    )

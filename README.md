@@ -114,6 +114,7 @@ Create a `.env` file in the project root:
 ```bash
 ARIZE_API_KEY=your_api_key
 ARIZE_SPACE_ID=your_space_id
+ARIZE_DEVELOPER_KEY=your_developer_key
 ```
 
 You can find these values in your Arize account settings.

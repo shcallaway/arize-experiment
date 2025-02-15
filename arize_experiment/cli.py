@@ -42,6 +42,13 @@ def experiment_options(f):
         help="Optional tags in key=value format (can be used multiple times)",
     )(f)
 
+    f = click.option(
+        "--evaluator",
+        "-e",
+        multiple=True,
+        help="Name of an evaluator to use (can be used multiple times)",
+    )(f)
+
     return f
 
 
@@ -96,7 +103,7 @@ def cli():
 
 @cli.command()
 @experiment_options
-def run(name: str, dataset: str, description: str, tag: Tuple[str, ...]):
+def run(name: str, dataset: str, description: str, tag: Tuple[str, ...], evaluator: Tuple[str, ...]):
     """Run an experiment on Arize.
 
     This command creates and runs a new experiment on the Arize platform
@@ -134,11 +141,18 @@ def run(name: str, dataset: str, description: str, tag: Tuple[str, ...]):
         # Create experiment configuration
         print("DEBUG: Creating experiment configuration")
         logger.info("Creating experiment configuration")
+        # Convert evaluator tuple to list if provided
+        evaluators = list(evaluator) if evaluator else None
+        if evaluators:
+            logger.info(f"Using evaluators: {evaluators}")
+            print(f"DEBUG: Using evaluators: {evaluators}")
+
         config = create_experiment_config(
             name=name,
             dataset=dataset,
             description=description,
             tags=tags,
+            evaluators=evaluators,
         )
         print(f"DEBUG: Config created: {config}")
 
