@@ -30,10 +30,12 @@ def clean_environment(monkeypatch):
     # Store original values
     original_api_key = os.environ.get("ARIZE_API_KEY")
     original_space_id = os.environ.get("ARIZE_SPACE_ID")
+    original_developer_key = os.environ.get("ARIZE_DEVELOPER_KEY")
 
     # Clear environment variables
     monkeypatch.delenv("ARIZE_API_KEY", raising=False)
     monkeypatch.delenv("ARIZE_SPACE_ID", raising=False)
+    monkeypatch.delenv("ARIZE_DEVELOPER_KEY", raising=False)
 
     yield monkeypatch
 
@@ -42,6 +44,8 @@ def clean_environment(monkeypatch):
         monkeypatch.setenv("ARIZE_API_KEY", original_api_key)
     if original_space_id is not None:
         monkeypatch.setenv("ARIZE_SPACE_ID", original_space_id)
+    if original_developer_key is not None:
+        monkeypatch.setenv("ARIZE_DEVELOPER_KEY", original_developer_key)
 
 
 @pytest.fixture
@@ -49,6 +53,7 @@ def mock_env(clean_environment):
     """Fixture to set up test environment variables."""
     clean_environment.setenv("ARIZE_API_KEY", "test_api_key")
     clean_environment.setenv("ARIZE_SPACE_ID", "test_space_id")
+    clean_environment.setenv("ARIZE_DEVELOPER_KEY", "test_developer_key")
 
 
 def test_arize_config_creation():
@@ -105,6 +110,7 @@ def test_get_arize_config_success(mock_env):
     assert isinstance(config, ArizeConfig)
     assert config.api_key == "test_api_key"
     assert config.space_id == "test_space_id"
+    assert config.developer_key == "test_developer_key"
 
 
 def test_get_arize_config_missing_api_key(clean_environment):
@@ -123,6 +129,16 @@ def test_get_arize_config_missing_space_id(clean_environment):
     with pytest.raises(EnvironmentError) as exc_info:
         get_arize_config()
     assert "ARIZE_SPACE_ID environment variable is not set" in str(exc_info.value)
+
+
+def test_get_arize_config_missing_developer_key(clean_environment):
+    """Test error handling when developer key is missing."""
+    # Set api_key and space_id but not developer_key
+    clean_environment.setenv("ARIZE_API_KEY", "test_api_key")
+    clean_environment.setenv("ARIZE_SPACE_ID", "test_space_id")
+    with pytest.raises(EnvironmentError) as exc_info:
+        get_arize_config()
+    assert "ARIZE_DEVELOPER_KEY environment variable is not set" in str(exc_info.value)
 
 
 def test_create_experiment_config_minimal():

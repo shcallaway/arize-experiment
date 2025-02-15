@@ -3,53 +3,27 @@ CLI implementation for arize-experiment.
 """
 
 import sys
-from typing import Tuple
 import click
-
+from typing import Tuple
 from arize_experiment.arize import create_client, ClientError
 from arize_experiment.config import get_arize_config, EnvironmentError
 from arize_experiment.config import create_experiment_config
-from arize_experiment.logging import configure_logging, get_logger
+from arize_experiment.logging import get_logger, configure_logging
 
 logger = get_logger(__name__)
 
 
-def experiment_options(f):
-    """Common options for experiment commands."""
-    f = click.option(
-        "--name",
-        "-n",
-        required=True,
-        help="Name of the experiment to create",
-    )(f)
+@click.group()
+def cli():
+    """arize-experiment: A tool for running experiments on Arize.
 
-    f = click.option(
-        "--dataset",
-        "-d",
-        required=True,
-        help="Name of the dataset to use for the experiment",
-    )(f)
-
-    f = click.option(
-        "--description",
-        help="Optional description of the experiment",
-    )(f)
-
-    f = click.option(
-        "--tag",
-        "-t",
-        multiple=True,
-        help="Optional tags in key=value format (can be used multiple times)",
-    )(f)
-
-    f = click.option(
-        "--evaluator",
-        "-e",
-        multiple=True,
-        help="Name of an evaluator to use (can be used multiple times)",
-    )(f)
-
-    return f
+    This CLI provides commands for interacting with the Arize platform
+    to create and run experiments. Use the --help flag with any command
+    for more information.
+    """
+    # Initialize logging with DEBUG level for development
+    configure_logging("DEBUG")
+    logger.debug("CLI initialized")
 
 
 def parse_tags(tag_list):
@@ -80,21 +54,35 @@ def parse_tags(tag_list):
     return tags
 
 
-@click.group()
-def cli():
-    """arize-experiment: A tool for running experiments on Arize.
-
-    This CLI provides commands for interacting with the Arize platform
-    to create and run experiments. Use the --help flag with any command
-    for more information.
-    """
-    # Initialize logging with DEBUG level for development
-    configure_logging("DEBUG")
-    logger.debug("CLI initialized")
-
-
 @cli.command()
-@experiment_options
+@click.option(
+    "--name",
+    "-n",
+    required=True,
+    help="Name of the experiment to create",
+)
+@click.option(
+    "--dataset",
+    "-d",
+    required=True,
+    help="Name of the dataset to use for the experiment",
+)
+@click.option(
+    "--description",
+    help="Optional description of the experiment",
+)
+@click.option(
+    "--tag",
+    "-t",
+    multiple=True,
+    help="Optional tags in key=value format (can be used multiple times)",
+)
+@click.option(
+    "--evaluator",
+    "-e",
+    multiple=True,
+    help="Name of an evaluator to use (can be used multiple times)",
+)
 def run(
     name: str,
     dataset: str,
@@ -161,6 +149,7 @@ def run(
         logger.error("Unexpected error", exc_info=True)
         click.secho(f"\nUnexpected error: {str(e)}", fg="red", err=True)
         sys.exit(1)
+
 
 
 def main():
