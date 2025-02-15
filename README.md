@@ -95,11 +95,11 @@ The CLI provides a single command `run` that creates and runs an experiment on A
 
 ```bash
 # Create and run an experiment
-python -m arize_experiment.cli run --name my-experiment --dataset my-dataset
+arize-experiment run --name my-experiment --dataset my-dataset
 
 # Get help
-python -m arize_experiment.cli --help
-python -m arize_experiment.cli run --help
+arize-experiment --help
+arize-experiment run --help
 ```
 
 ### Options
@@ -112,9 +112,6 @@ python -m arize_experiment.cli run --help
 This package uses Python namespace packages (PEP 420). To import functionality, use direct imports from the specific modules:
 
 ```python
-# Import version
-from arize_experiment.version import __version__
-
 # Import client functionality
 from arize_experiment.client.arize import create_client, ClientError
 
@@ -127,7 +124,7 @@ from arize_experiment.config.env import ArizeConfig
 from arize_experiment.config.experiment import ExperimentConfig, create_experiment_config
 
 # Import CLI
-from arize_experiment.cli.commands import main
+from arize_experiment.cli import main
 ```
 
 ## Development

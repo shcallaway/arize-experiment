@@ -10,7 +10,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="arize-experiment",
-    version="0.1.0",
+    version="0.2.0",  # Hardcoded version number
     author="Sherwood Callaway",
     description="Create and run an experiment on Arize",
     long_description=long_description,
@@ -25,7 +25,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "arize-experiment=arize_experiment.cli.commands:main",
+            "arize-experiment=arize_experiment.cli:main",
         ],
     },
 )
