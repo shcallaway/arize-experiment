@@ -16,10 +16,11 @@ from arize_experiment.config import (
 @pytest.fixture(autouse=True)
 def mock_dotenv(monkeypatch):
     """Mock python-dotenv to prevent loading real .env files."""
+
     def mock_load_dotenv(*args, **kwargs):
         """Mock implementation that does nothing."""
         return True
-    
+
     monkeypatch.setattr("arize_experiment.config.load_dotenv", mock_load_dotenv)
 
 
@@ -29,13 +30,13 @@ def clean_environment(monkeypatch):
     # Store original values
     original_api_key = os.environ.get("ARIZE_API_KEY")
     original_space_id = os.environ.get("ARIZE_SPACE_ID")
-    
+
     # Clear environment variables
     monkeypatch.delenv("ARIZE_API_KEY", raising=False)
     monkeypatch.delenv("ARIZE_SPACE_ID", raising=False)
-    
+
     yield monkeypatch
-    
+
     # Restore original values if they existed
     if original_api_key is not None:
         monkeypatch.setenv("ARIZE_API_KEY", original_api_key)

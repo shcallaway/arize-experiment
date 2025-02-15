@@ -49,7 +49,7 @@ class ExperimentConfig:
 
         if self.tags:
             config["tags"] = self.tags
-            
+
         if self.evaluators:
             config["evaluators"] = self.evaluators
 
@@ -116,11 +116,7 @@ def get_arize_config() -> ArizeConfig:
         raise EnvironmentError(msg)
 
     logger.debug("Successfully loaded Arize configuration")
-    return ArizeConfig(
-        api_key=api_key,
-        space_id=space_id,
-        developer_key=developer_key
-    )
+    return ArizeConfig(api_key=api_key, space_id=space_id, developer_key=developer_key)
 
 
 def create_experiment_config(
@@ -151,5 +147,5 @@ def create_experiment_config(
         dataset=dataset,
         description=description,
         tags=tags,
-        evaluators=evaluators
+        evaluators=evaluators,
     )

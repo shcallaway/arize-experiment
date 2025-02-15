@@ -95,7 +95,13 @@ def cli():
 
 @cli.command()
 @experiment_options
-def run(name: str, dataset: str, description: str, tag: Tuple[str, ...], evaluator: Tuple[str, ...]):
+def run(
+    name: str,
+    dataset: str,
+    description: str,
+    tag: Tuple[str, ...],
+    evaluator: Tuple[str, ...],
+):
     """Run an experiment on Arize.
 
     This command creates and runs a new experiment on the Arize platform
@@ -111,7 +117,7 @@ def run(name: str, dataset: str, description: str, tag: Tuple[str, ...], evaluat
 
     try:
         logger.debug("Starting run command")
-        
+
         # Parse tags if provided
         tags = parse_tags(tag)
         if tags:
@@ -122,10 +128,10 @@ def run(name: str, dataset: str, description: str, tag: Tuple[str, ...], evaluat
         arize_config = get_arize_config()
         logger.debug(f"Loaded config: {arize_config}")
 
-        # Create Arize client
-        logger.debug("Initializing Arize client")
-        client = create_client(arize_config)
-        logger.debug("Client initialized successfully")
+        # TODO: Uncomment when client implementation is ready
+        # logger.debug("Initializing Arize client")
+        # client = create_client(arize_config)
+        # logger.debug("Client initialized successfully")
 
         # Create experiment configuration
         logger.debug("Creating experiment configuration")
@@ -145,7 +151,7 @@ def run(name: str, dataset: str, description: str, tag: Tuple[str, ...], evaluat
 
         # Create and run experiment
         logger.info(f"Starting experiment '{name}'")
-        # TODO: Implement experiment execution
+        # TODO: Use client to run experiment once implemented
         click.secho(f"\nSuccessfully started experiment '{name}'", fg="green")
 
     except (EnvironmentError, ClientError) as e:
@@ -163,9 +169,13 @@ def main():
         # Set up exception hook to print full traceback
         def handle_exception(exc_type, exc_value, exc_traceback):
             import traceback
-            print("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+
+            print(
+                "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+            )
+
         sys.excepthook = handle_exception
-        
+
         cli()
     except Exception as e:
         click.secho(f"Critical error: {str(e)}", fg="red", err=True)

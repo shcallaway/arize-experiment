@@ -44,4 +44,3 @@ def create_client(config: ArizeConfig) -> ArizeDatasetsClient:
         error_msg = f"Failed to initialize Arize datasets client: {str(e)}"
         logger.error(error_msg, exc_info=True)
         raise ClientError(error_msg) from e
-

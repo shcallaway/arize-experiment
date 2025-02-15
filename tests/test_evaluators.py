@@ -1,6 +1,6 @@
 """Tests for evaluator functions."""
 
-import pytest
+import pytest  # noqa: F401 - used for test discovery
 from arize_experiment.evaluators.is_number import is_number
 
 
