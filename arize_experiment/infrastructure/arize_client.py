@@ -149,6 +149,10 @@ class ArizeClient:
                 experiment_name=experiment_name
             )
         except Exception as e:
+            # Let ArrowKeyError propagate up
+            if "ArrowKeyError" in str(type(e)) and "experiment does not exist" in str(e).lower():
+                raise
+            # Wrap other errors in APIError
             error_msg = (
                 f"Failed to run experiment '{experiment_name}' "
                 f"on dataset '{dataset_name}': {str(e)}"
@@ -187,9 +191,12 @@ class ArizeClient:
                 dataset_name=dataset_name
             )
         except Exception as e:
-            error_msg = (
-                f"Failed to get experiment '{experiment_name}' "
-                f"from dataset '{dataset_name}': {str(e)}"
-            )
-            logger.error(error_msg, exc_info=True)
-            raise APIError(error_msg) from e
+            # Check for pyarrow.lib.ArrowKeyError by string since we can't import pyarrow
+            if "ArrowKeyError" in str(type(e)) and "experiment does not exist" in str(e).lower():
+                # This is an expected case, return None
+                logger.debug(
+                    f"Experiment '{experiment_name}' does not exist in dataset '{dataset_name}'"
+                )
+                return None
+            # Let other errors propagate up
+            raise

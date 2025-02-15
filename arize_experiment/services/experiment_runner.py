@@ -91,12 +91,25 @@ class ExperimentRunner:
 
             # Run experiment using Arize client
             logger.info(f"Running experiment on Arize: {experiment.name}")
-            arize_result = self.client.run_experiment(
-                experiment_name=experiment.name,
-                dataset_name=experiment.dataset,
-                task=task_fn,
-                evaluators=evaluator_fns if experiment.evaluators else None
-            )
+            try:
+                arize_result = self.client.run_experiment(
+                    experiment_name=experiment.name,
+                    dataset_name=experiment.dataset,
+                    task=task_fn,
+                    evaluators=evaluator_fns if experiment.evaluators else None
+                )
+            except Exception as e:
+                if "ArrowKeyError" in str(type(e)) and "experiment does not exist" in str(e).lower():
+                    # Experiment doesn't exist yet, try to create it
+                    logger.info(f"Creating new experiment: {experiment.name}")
+                    arize_result = self.client.run_experiment(
+                        experiment_name=experiment.name,
+                        dataset_name=experiment.dataset,
+                        task=task_fn,
+                        evaluators=evaluator_fns if experiment.evaluators else None
+                    )
+                else:
+                    raise
 
             # Ensure we have a valid result structure
             if not arize_result or not isinstance(arize_result, dict):

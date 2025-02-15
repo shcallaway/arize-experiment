@@ -95,8 +95,13 @@ class CommandHandler:
                     "or set DATASET in your .env file"
                 )
 
+            # Check if experiment already exists
+            existing = client.get_experiment(experiment_name=name, dataset_name=dataset_name)
+            if existing is not None:
+                raise HandlerError(f"Experiment '{name}' already exists")
+
             # Create experiment configuration
-            logger.debug("Creating experiment configuration")
+            logger.debug(f"Creating experiment configuration: {name}")
             config = self.config_manager.create_experiment_config(
                 name=name,
                 dataset=dataset_name,
