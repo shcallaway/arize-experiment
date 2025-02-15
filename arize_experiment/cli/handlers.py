@@ -8,7 +8,8 @@ from typing import Dict, List, Optional
 import click
 
 from arize_experiment.core.evaluator import BaseEvaluator
-from arize_experiment.core.example_task import EchoTask, TextProcessingTask
+from arize_experiment.tasks.echo import EchoTask
+from arize_experiment.tasks.sentiment_classification import SentimentClassificationTask
 from arize_experiment.core.experiment import Experiment
 from arize_experiment.infrastructure.arize_client import ArizeClient, ArizeClientError
 from arize_experiment.infrastructure.config import (
@@ -46,12 +47,10 @@ class CommandHandler:
     def _init_evaluators(self):
         """Initialize and register available evaluators."""
         # Import evaluators here to avoid circular imports
-        from arize_experiment.evaluators.sentiment import SentimentEvaluator
-        from arize_experiment.evaluators.numeric import NumericEvaluator
+        from arize_experiment.evaluators.sentiment_classification_accuracy import SentimentClassificationAccuracyEvaluator
 
         # Register available evaluator types
-        self.evaluator_service.register_type(SentimentEvaluator)
-        self.evaluator_service.register_type(NumericEvaluator)
+        self.evaluator_service.register_type(SentimentClassificationAccuracyEvaluator)
 
     def run_experiment(
         self,
@@ -113,11 +112,14 @@ class CommandHandler:
             # Create evaluator instances
             evaluators = self._create_evaluators(evaluator_names)
 
+            # Use sentiment classification as default task
+            task = SentimentClassificationTask()
+
             # Create experiment
             experiment = Experiment(
                 name=config.name,
                 dataset=config.dataset,
-                task=TextProcessingTask(),  # Use text processing as default task
+                task=task,
                 evaluators=evaluators,
                 description=config.description,
                 tags=config.tags or {},

@@ -191,12 +191,7 @@ class ArizeClient:
                 dataset_name=dataset_name
             )
         except Exception as e:
-            # Check for pyarrow.lib.ArrowKeyError by string since we can't import pyarrow
-            if "ArrowKeyError" in str(type(e)) and "experiment does not exist" in str(e).lower():
-                # This is an expected case, return None
-                logger.debug(
-                    f"Experiment '{experiment_name}' does not exist in dataset '{dataset_name}'"
-                )
+            if ("Failed to get experiment") in str(e):
                 return None
             # Let other errors propagate up
             raise
