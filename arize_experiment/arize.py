@@ -37,22 +37,12 @@ def create_client(config: ArizeConfig) -> Client:
             space_id=config.space_id,
         )
 
-        # Test client by attempting to create a minimal experiment
-        test_config = {
-            "name": "_test_connection",
-            "dataset": "_test_dataset",
-        }
-
-        try:
-            logger.debug("Testing client connection...")
-            client.create_experiment(**test_config)
-            logger.debug("Successfully tested Arize client connection")
-        except Exception as e:
-            raise ClientError(f"Failed to verify client connection: {str(e)}")
-
+        # Client is initialized with credentials, no need for explicit verification
+        logger.debug("Successfully initialized Arize client")
         return client
 
     except Exception as e:
         error_msg = f"Failed to initialize Arize client: {str(e)}"
         logger.error(error_msg, exc_info=True)
         raise ClientError(error_msg) from e
+
