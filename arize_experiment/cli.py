@@ -4,8 +4,9 @@ CLI implementation for arize-experiment.
 
 import sys
 import click
-from typing import Tuple
-from arize_experiment.arize import ClientError
+from typing import Optional, Tuple
+from arize_experiment.client import ClientError, create_client
+from arize_experiment.task import example_task
 from arize_experiment.config import get_arize_config, EnvironmentError
 from arize_experiment.config import create_experiment_config
 from arize_experiment.logging import get_logger, configure_logging
@@ -64,8 +65,8 @@ def parse_tags(tag_list):
 @click.option(
     "--dataset",
     "-d",
-    required=True,
-    help="Name of the dataset to use for the experiment",
+    required=False,
+    help="Name of the dataset to use for the experiment (uses DATASET from .env if not provided)",
 )
 @click.option(
     "--description",
@@ -85,7 +86,7 @@ def parse_tags(tag_list):
 )
 def run(
     name: str,
-    dataset: str,
+    dataset: Optional[str],
     description: str,
     tag: Tuple[str, ...],
     evaluator: Tuple[str, ...],
@@ -116,10 +117,9 @@ def run(
         arize_config = get_arize_config()
         logger.debug(f"Loaded config: {arize_config}")
 
-        # TODO: Uncomment when client implementation is ready
-        # logger.debug("Initializing Arize client")
-        # client = create_client(arize_config)
-        # logger.debug("Client initialized successfully")
+        logger.debug("Initializing Arize client")
+        client = create_client(arize_config)
+        logger.debug("Client initialized successfully")
 
         # Create experiment configuration
         logger.debug("Creating experiment configuration")
@@ -128,9 +128,18 @@ def run(
         if evaluators:
             logger.info(f"Using evaluators: {evaluators}")
 
+        # Use default dataset if none provided
+        dataset_id = dataset or arize_config.default_dataset
+        if not dataset_id:
+            raise click.UsageError(
+                "No dataset specified. Either provide --dataset option "
+                "or set DATASET in your .env file"
+            )
+        logger.debug(f"Using dataset: {dataset_id}")
+
         config = create_experiment_config(
             name=name,
-            dataset=dataset,
+            dataset=dataset_id,
             description=description,
             tags=tags,
             evaluators=evaluators,
@@ -139,7 +148,21 @@ def run(
 
         # Create and run experiment
         logger.info(f"Starting experiment '{name}'")
-        # TODO: Use client to run experiment once implemented
+        # Get values from config
+        experiment_dict = config.to_dict()
+        logger.debug(f"Running experiment with config: {experiment_dict}")
+        
+        # Run experiment with named arguments matching API signature
+        dataset_id = experiment_dict['dataset']
+        logger.debug(f"Using dataset ID: {dataset_id}")
+        
+        client.run_experiment(
+            space_id=arize_config.space_id,
+            dataset_id=dataset_id,
+            task=example_task,
+            evaluators=experiment_dict.get('evaluators'),
+            experiment_name=experiment_dict['name']
+        )
         click.secho(f"\nSuccessfully started experiment '{name}'", fg="green")
 
     except (EnvironmentError, ClientError) as e:

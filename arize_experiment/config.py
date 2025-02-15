@@ -21,6 +21,7 @@ class ArizeConfig:
     api_key: str
     space_id: str
     developer_key: str
+    default_dataset: Optional[str] = None
 
 
 @dataclass
@@ -84,10 +85,12 @@ def get_arize_config() -> ArizeConfig:
     api_key = os.getenv("ARIZE_API_KEY")
     space_id = os.getenv("ARIZE_SPACE_ID")
     developer_key = os.getenv("ARIZE_DEVELOPER_KEY")
+    default_dataset = os.getenv("DATASET")
 
     logger.debug(f"Retrieved API key (length: {len(api_key) if api_key else 0})")
     logger.debug(f"Retrieved space ID: {space_id}")
     logger.debug(f"Retrieved developer key: {developer_key}")
+    logger.debug(f"Retrieved default dataset: {default_dataset}")
     if not api_key:
         msg = (
             "ARIZE_API_KEY environment variable is not set.\n"
@@ -116,7 +119,12 @@ def get_arize_config() -> ArizeConfig:
         raise EnvironmentError(msg)
 
     logger.debug("Successfully loaded Arize configuration")
-    return ArizeConfig(api_key=api_key, space_id=space_id, developer_key=developer_key)
+    return ArizeConfig(
+        api_key=api_key,
+        space_id=space_id,
+        developer_key=developer_key,
+        default_dataset=default_dataset
+    )
 
 
 def create_experiment_config(
