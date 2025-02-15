@@ -107,6 +107,29 @@ python -m arize_experiment.cli run --help
 - `--name`, `-n`: Name of the experiment to create (required)
 - `--dataset`, `-d`: Name of the dataset to use for the experiment (required)
 
+### Imports
+
+This package uses Python namespace packages (PEP 420). To import functionality, use direct imports from the specific modules:
+
+```python
+# Import version
+from arize_experiment.version import __version__
+
+# Import client functionality
+from arize_experiment.client.arize import create_client, ClientError
+
+# Import experiment classes
+from arize_experiment.experiments.base import Experiment, ExperimentError
+from arize_experiment.experiments.dataset import DatasetExperiment
+
+# Import configuration
+from arize_experiment.config.env import ArizeConfig
+from arize_experiment.config.experiment import ExperimentConfig, create_experiment_config
+
+# Import CLI
+from arize_experiment.cli.commands import main
+```
+
 ## Development
 
 1. Clone the repository
