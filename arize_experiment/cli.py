@@ -5,7 +5,7 @@ CLI implementation for arize-experiment.
 import sys
 import click
 from typing import Tuple
-from arize_experiment.arize import create_client, ClientError
+from arize_experiment.arize import ClientError
 from arize_experiment.config import get_arize_config, EnvironmentError
 from arize_experiment.config import create_experiment_config
 from arize_experiment.logging import get_logger, configure_logging
@@ -149,7 +149,6 @@ def run(
         logger.error("Unexpected error", exc_info=True)
         click.secho(f"\nUnexpected error: {str(e)}", fg="red", err=True)
         sys.exit(1)
-
 
 
 def main():

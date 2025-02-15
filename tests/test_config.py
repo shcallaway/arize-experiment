@@ -58,7 +58,9 @@ def mock_env(clean_environment):
 
 def test_arize_config_creation():
     """Test ArizeConfig dataclass creation."""
-    config = ArizeConfig(api_key="test_key", space_id="test_space", developer_key="test_dev_key")
+    config = ArizeConfig(
+        api_key="test_key", space_id="test_space", developer_key="test_dev_key"
+    )
     assert config.api_key == "test_key"
     assert config.space_id == "test_space"
 
