@@ -60,11 +60,34 @@ class ExperimentRunner:
             experiment.validate()
 
             # Convert task and evaluators to callables for Arize API
-            task_fn = lambda input: experiment.task.execute(input).output
+            def task_fn(input_data):
+                # Convert Arize types to string if needed
+                if hasattr(input_data, '_asdict'):
+                    input_data = str(input_data._asdict())
+                elif not isinstance(input_data, str):
+                    input_data = str(input_data)
+                
+                result = experiment.task.execute(input_data)
+                return {
+                    "id": experiment.name,  # Use experiment name as run ID
+                    "output": result.output,
+                    "error": result.error
+                }
+            
+            def create_evaluator_fn(evaluator):
+                def evaluator_fn(output):
+                    # Convert Arize types to string if needed
+                    if hasattr(output, '_asdict'):
+                        output = str(output._asdict())
+                    elif not isinstance(output, str):
+                        output = str(output)
+                    return evaluator.evaluate(output).score
+                return evaluator_fn
+            
             evaluator_fns = [
-                lambda output, e=evaluator: e.evaluate(output).score
+                create_evaluator_fn(evaluator)
                 for evaluator in experiment.evaluators
-            ]
+            ] if experiment.evaluators else None
 
             # Run experiment using Arize client
             logger.info(f"Running experiment on Arize: {experiment.name}")
@@ -75,16 +98,43 @@ class ExperimentRunner:
                 evaluators=evaluator_fns if experiment.evaluators else None
             )
 
-            # Convert Arize result to ExperimentResult
-            task_result = TaskResult(output=arize_result, error=None)
-            evaluation_results = [
-                EvaluationResult(
-                    score=score,
-                    label="arize_evaluation",
-                    explanation="Evaluation performed on Arize platform"
-                )
-                for score in (arize_result.get("scores", []) if isinstance(arize_result, dict) else [])
-            ]
+            # Ensure we have a valid result structure
+            if not arize_result or not isinstance(arize_result, dict):
+                raise ExperimentRunnerError("Invalid result format from Arize API")
+
+            # Extract run ID and results
+            run_id = arize_result.get("id")
+            if not run_id:
+                raise ExperimentRunnerError("Missing run ID in Arize API response")
+
+            # Get the actual task output
+            output = arize_result.get("output")
+            
+            # Handle various output types
+            if hasattr(output, '_asdict'):
+                output = str(output._asdict())
+            elif output is None:
+                # If no specific output, use the full result minus internal fields
+                cleaned_result = {k: v for k, v in arize_result.items() if k not in ["id", "scores"]}
+                output = str(cleaned_result)
+            elif not isinstance(output, str):
+                output = str(output)
+            
+            # Get error if present
+            error = arize_result.get("error")
+            task_result = TaskResult(output=output, error=error)
+            
+            # Handle evaluation results
+            evaluation_results = []
+            if "scores" in arize_result:
+                evaluation_results = [
+                    EvaluationResult(
+                        score=score,
+                        label="arize_evaluation",
+                        explanation="Evaluation performed on Arize platform"
+                    )
+                    for score in arize_result["scores"]
+                ]
 
             return ExperimentResult(
                 task_result=task_result,
