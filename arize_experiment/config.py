@@ -5,12 +5,13 @@ This module combines environment variable and experiment configuration managemen
 """
 
 import os
-import logging
 from dataclasses import dataclass
 from typing import Optional
 from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
+from arize_experiment.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -19,6 +20,7 @@ class ArizeConfig:
 
     api_key: str
     space_id: str
+    developer_key: str
 
 
 @dataclass
@@ -81,10 +83,11 @@ def get_arize_config() -> ArizeConfig:
 
     api_key = os.getenv("ARIZE_API_KEY")
     space_id = os.getenv("ARIZE_SPACE_ID")
+    developer_key = os.getenv("ARIZE_DEVELOPER_KEY")
 
     logger.debug(f"Retrieved API key (length: {len(api_key) if api_key else 0})")
     logger.debug(f"Retrieved space ID: {space_id}")
-
+    logger.debug(f"Retrieved developer key: {developer_key}")
     if not api_key:
         msg = (
             "ARIZE_API_KEY environment variable is not set.\n"
@@ -103,10 +106,20 @@ def get_arize_config() -> ArizeConfig:
         logger.error(msg)
         raise EnvironmentError(msg)
 
+    if not developer_key:
+        msg = (
+            "ARIZE_DEVELOPER_KEY environment variable is not set.\n"
+            "Please set your Arize developer key in the .env file:\n"
+            "ARIZE_DEVELOPER_KEY=your_developer_key_here"
+        )
+        logger.error(msg)
+        raise EnvironmentError(msg)
+
     logger.debug("Successfully loaded Arize configuration")
     return ArizeConfig(
         api_key=api_key,
-        space_id=space_id
+        space_id=space_id,
+        developer_key=developer_key
     )
 
 

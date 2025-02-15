@@ -3,11 +3,11 @@ Arize client initialization and management.
 """
 
 from arize.experimental.datasets import ArizeDatasetsClient
-import logging
 
 from arize_experiment.config import ArizeConfig
+from arize_experiment.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ClientError(Exception):
@@ -34,7 +34,7 @@ def create_client(config: ArizeConfig) -> ArizeDatasetsClient:
         # Create client with required configuration
         client = ArizeDatasetsClient(
             api_key=config.api_key,
-            space_id=config.space_id,
+            developer_key=config.developer_key,
         )
 
         logger.debug("Successfully initialized Arize datasets client")

@@ -5,13 +5,13 @@ CLI implementation for arize-experiment.
 import sys
 from typing import Tuple
 import click
-import logging
 
 from arize_experiment.arize import create_client, ClientError
 from arize_experiment.config import get_arize_config, EnvironmentError
 from arize_experiment.config import create_experiment_config
+from arize_experiment.logging import configure_logging, get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def experiment_options(f):
@@ -88,17 +88,9 @@ def cli():
     to create and run experiments. Use the --help flag with any command
     for more information.
     """
-    # Configure logging early
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s [%(levelname)s] %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        force=True
-    )
-    # Ensure all loggers are set to DEBUG
-    for name in logging.root.manager.loggerDict:
-        logging.getLogger(name).setLevel(logging.DEBUG)
-    logger.debug("CLI initialized with DEBUG logging")
+    # Initialize logging with DEBUG level for development
+    configure_logging("DEBUG")
+    logger.debug("CLI initialized")
 
 
 @cli.command()
@@ -118,34 +110,29 @@ def run(name: str, dataset: str, description: str, tag: Tuple[str, ...], evaluat
     logger.info("Starting experiment run")
 
     try:
-        print("DEBUG: Starting run command")
+        logger.debug("Starting run command")
         
         # Parse tags if provided
         tags = parse_tags(tag)
         if tags:
-            print(f"DEBUG: Using tags: {tags}")
             logger.info(f"Using tags: {tags}")
 
         # Get Arize configuration
-        print("DEBUG: Loading Arize configuration")
-        logger.info("Loading Arize configuration")
+        logger.debug("Loading Arize configuration")
         arize_config = get_arize_config()
-        print(f"DEBUG: Got config: {arize_config}")
+        logger.debug(f"Loaded config: {arize_config}")
 
         # Create Arize client
-        print("DEBUG: Initializing Arize client")
-        logger.info("Initializing Arize client")
+        logger.debug("Initializing Arize client")
         client = create_client(arize_config)
-        print("DEBUG: Client created")
+        logger.debug("Client initialized successfully")
 
         # Create experiment configuration
-        print("DEBUG: Creating experiment configuration")
-        logger.info("Creating experiment configuration")
+        logger.debug("Creating experiment configuration")
         # Convert evaluator tuple to list if provided
         evaluators = list(evaluator) if evaluator else None
         if evaluators:
             logger.info(f"Using evaluators: {evaluators}")
-            print(f"DEBUG: Using evaluators: {evaluators}")
 
         config = create_experiment_config(
             name=name,
@@ -154,13 +141,11 @@ def run(name: str, dataset: str, description: str, tag: Tuple[str, ...], evaluat
             tags=tags,
             evaluators=evaluators,
         )
-        print(f"DEBUG: Config created: {config}")
+        logger.debug(f"Created experiment config: {config}")
 
         # Create and run experiment
-        print(f"DEBUG: Creating experiment instance for '{name}'")
-        logger.info(f"Running experiment '{name}'")
-        print("DEBUG: Running experiment")
-        # TODO
+        logger.info(f"Starting experiment '{name}'")
+        # TODO: Implement experiment execution
         click.secho(f"\nSuccessfully started experiment '{name}'", fg="green")
 
     except (EnvironmentError, ClientError) as e:
