@@ -2,17 +2,82 @@
 
 A CLI tool for creating and running experiments on Arize.
 
-## Requirements
+## Prerequisites
 
-This tool requires Python 3.10 (Python 3.11 and above are not supported due to dependency constraints). We recommend using `pyenv` to manage Python versions, similar to how `nvm` works for Node.js.
+- Python 3.10 (Python 3.11+ not supported due to dependency constraints)
+- pyenv (recommended for Python version management)
 
-### Installing pyenv
+## pyenv
+
+pyenv is a Python version manager that lets you easily switch between multiple versions of Python. It's similar to nvm for Node.js.
+
+### pyenv Commands
+
+Common pyenv commands you'll use:
 
 ```bash
-# Using Homebrew
+# List all available Python versions
+pyenv install --list
+
+# List installed versions
+pyenv versions
+
+# Install a specific version
+pyenv install 3.10.13
+
+# Set global Python version
+pyenv global 3.10.13
+
+# Set local version (creates .python-version file)
+pyenv local 3.10.13
+
+# Show current Python version
+pyenv version
+
+# Uninstall a version
+pyenv uninstall 3.10.13
+```
+
+### pyenv Configuration
+
+pyenv needs to be properly configured in your shell to work. Add these lines to your shell configuration file (e.g., `~/.zshrc` or `~/.bashrc`):
+
+```bash
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+```
+
+After modifying your shell configuration, reload it:
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### Common Issues
+
+1. **Python command not found**
+
+   ```bash
+   pyenv rehash
+   eval "$(pyenv init -)"
+   ```
+
+2. **python-build: definition not found**
+
+   ```bash
+   pyenv update
+   ```
+
+## Setup
+
+### 1. Install and Configure pyenv
+
+```bash
+# Install pyenv
 brew install pyenv
 
-# Add to your shell (add these to ~/.zshrc)
+# Add to your shell (add to ~/.zshrc)
 echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
 echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
 echo 'eval "$(pyenv init -)"' >> ~/.zshrc
@@ -21,158 +86,81 @@ echo 'eval "$(pyenv init -)"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-### Setting up Python 3.10 with pyenv
+### 2. Install Python 3.10
 
 ```bash
-# List available Python versions
-pyenv install --list | grep " 3.10"
-
-# Install Python 3.10
 pyenv install 3.10.13
-
-# Set local Python version (for this project)
 pyenv local 3.10.13
-
-# Verify Python version
 python --version  # Should show Python 3.10.13
 ```
 
-### Troubleshooting pyenv
-
-If you encounter issues with pyenv:
-
-1. If `python` command is not found:
+### 3. Set up Virtual Environment
 
 ```bash
-# Rehash pyenv shims
-pyenv rehash
-
-# Ensure pyenv is initialized in your shell
-eval "$(pyenv init -)"
-eval "$(pyenv init --path)"
-```
-
-2. If you see "python-build: definition not found":
-
-```bash
-# Update pyenv and try again
-pyenv update
-```
-
-3. For immediate access without shell restart, use the full path:
-
-```bash
-~/.pyenv/versions/3.10.13/bin/python
-```
-
-## Installation
-
-```bash
-# Create virtual environment
 python -m venv venv
-
-# Activate virtual environment
 source venv/bin/activate
+```
 
-# Install package
+### 4. Install Package
+
+```bash
 pip install -e .
 ```
 
-## Authentication
+## Configuration
 
-You'll need an Arize API key and space ID to use this tool. Create a `.env` file in the project root and add your API key and space ID:
+Create a `.env` file in the project root:
 
 ```bash
-ARIZE_API_KEY=
-ARIZE_SPACE_ID=
+ARIZE_API_KEY=your_api_key
+ARIZE_SPACE_ID=your_space_id
 ```
 
-You can find your API key and space ID in your Arize account settings.
+You can find these values in your Arize account settings.
 
 ## Usage
 
-The CLI provides a single command `run` that creates and runs an experiment on Arize:
+Run an experiment:
 
 ```bash
-# Create and run an experiment
 arize-experiment run --name my-experiment --dataset my-dataset
-
-# Get help
-arize-experiment --help
-arize-experiment run --help
 ```
 
-### Options
+Options:
 
-- `--name`, `-n`: Name of the experiment to create (required)
-- `--dataset`, `-d`: Name of the dataset to use for the experiment (required)
-
-### Imports
-
-This package uses Python namespace packages (PEP 420). To import functionality, use direct imports from the specific modules:
-
-```python
-# Import client functionality
-from arize_experiment.client.arize import create_client, ClientError
-
-# Import experiment classes
-from arize_experiment.experiments.base import Experiment, ExperimentError
-from arize_experiment.experiments.dataset import DatasetExperiment
-
-# Import configuration
-from arize_experiment.config.env import ArizeConfig
-from arize_experiment.config.experiment import ExperimentConfig, create_experiment_config
-
-# Import CLI
-from arize_experiment.cli import main
-```
+- `--name`, `-n`: Experiment name (required)
+- `--dataset`, `-d`: Dataset name (required)
 
 ## Development
 
-1. Clone the repository
-2. Install pyenv following the instructions above
-3. Install Python 3.10: `pyenv install 3.10.13`
-4. Set local Python version: `pyenv local 3.10.13`
-5. Create a virtual environment: `python -m venv venv`
-6. Activate the virtual environment: `source venv/bin/activate`
-7. Install dependencies: `pip install -e .`
-8. Create `.env` file with your Arize API key and space ID
-
 ### Code Formatting
 
-This project uses Black for code formatting. Black is already included in the development dependencies.
+Format code using Black:
 
 ```bash
-# Format all Python files in the project
-black .
-
-# Check formatting without making changes
-black . --check
+black .          # Format files
+black . --check  # Check formatting
 ```
 
-### Switching Python Versions
+## Code Linting
 
-If you need to switch Python versions:
+Lint code using Flake8:
 
 ```bash
-# List installed versions
-pyenv versions
+flake8 .
+```
 
-# Install a different version
-pyenv install 3.10.13
+## Troubleshooting
 
-# Switch version for this project
-pyenv local 3.10.13
+If Python command is not found after installing with pyenv:
 
-# Check Python version
-python --version  # Should show Python 3.10.13
+```bash
+pyenv rehash
+eval "$(pyenv init -)"
+```
 
-# Create new venv with different version
-rm -rf venv
-python -m venv venv
-source venv/bin/activate
-pip install -e .
+If you see "python-build: definition not found":
 
-# To switch back to the default Python version
-pyenv local system
+```bash
+pyenv update
 ```
