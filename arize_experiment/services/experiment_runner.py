@@ -68,19 +68,20 @@ class ExperimentRunner:
                     input_data = str(input_data)
                 
                 result = experiment.task.execute(input_data)
-                return {
-                    "id": experiment.name,  # Use experiment name as run ID
-                    "output": result.output,
-                    "error": result.error
-                }
+                # For evaluation, return just the task output
+                # But include metadata for Arize API
+                if result.error:
+                    return {
+                        "id": experiment.name,
+                        "error": result.error
+                    }
+                return result.output
             
             def create_evaluator_fn(evaluator):
                 def evaluator_fn(output):
-                    # Convert Arize types to string if needed
+                    # Convert Arize types to dict if needed
                     if hasattr(output, '_asdict'):
-                        output = str(output._asdict())
-                    elif not isinstance(output, str):
-                        output = str(output)
+                        output = output._asdict()
                     return evaluator.evaluate(output).score
                 return evaluator_fn
             
@@ -125,13 +126,10 @@ class ExperimentRunner:
             
             # Handle various output types
             if hasattr(output, '_asdict'):
-                output = str(output._asdict())
+                output = output._asdict()
             elif output is None:
                 # If no specific output, use the full result minus internal fields
-                cleaned_result = {k: v for k, v in arize_result.items() if k not in ["id", "scores"]}
-                output = str(cleaned_result)
-            elif not isinstance(output, str):
-                output = str(output)
+                output = {k: v for k, v in arize_result.items() if k not in ["id", "scores"]}
             
             # Get error if present
             error = arize_result.get("error")

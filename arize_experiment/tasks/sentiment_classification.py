@@ -62,12 +62,22 @@ class SentimentClassificationTask(Task):
             
         Returns:
             TaskResult containing:
-            - output: Dictionary with predictions
+            - output: Dictionary with predictions containing input_text and classification
             - metadata: Optional processing information
             - error: Any error message if task failed
         """
         try:
             result = self._predict(input_data)
+            # For single text input, return just the first prediction
+            if isinstance(input_data, str):
+                return TaskResult(
+                    output=result["predictions"][0],
+                    metadata={
+                        "model": self.model_name,
+                        "num_texts": 1
+                    }
+                )
+            # For multiple texts, return all predictions
             return TaskResult(
                 output=result,
                 metadata={
@@ -88,14 +98,14 @@ class SentimentClassificationTask(Task):
     def _predict(
         self,
         texts: Union[str, List[str]],
-    ) -> Dict[str, List[str]]:
+    ) -> Dict[str, List[Dict[str, str]]]:
         """Internal prediction method with retry logic.
         
         Args:
             texts: Single text string or list of text strings
             
         Returns:
-            Dictionary containing predicted sentiments
+            Dictionary containing input texts and their predicted sentiments
         """
         # Convert single string to list for batch processing
         if isinstance(texts, str):
@@ -112,8 +122,8 @@ class SentimentClassificationTask(Task):
                 "content": text
             })
 
-        predictions = []
-        for msg_pair in messages[::2]:  # Process each text's message pair
+        results = []
+        for i, msg_pair in enumerate(messages[::2]):  # Process each text's message pair
             response = openai.chat.completions.create(
                 model=self.model_name,
                 messages=[msg_pair, messages[messages.index(msg_pair) + 1]],
@@ -124,10 +134,14 @@ class SentimentClassificationTask(Task):
             # Ensure we only get valid labels
             if sentiment not in ["positive", "negative", "neutral"]:
                 sentiment = "neutral"
-            predictions.append(sentiment)
+            
+            results.append({
+                "input_text": texts[i],
+                "classification": sentiment
+            })
 
         return {
-            "predictions": predictions
+            "predictions": results
         }
 
     def get_label_mapping(self) -> Dict[str, str]:
