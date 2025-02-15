@@ -7,7 +7,7 @@ from typing import Optional
 import logging
 
 from arize.pandas.logger import Client
-from arize_experiment.config.experiment import ExperimentConfig
+from arize_experiment.config import ExperimentConfig
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ Dataset-based experiment implementation.
 import logging
 from arize.pandas.logger import Client
 
-from arize_experiment.config.experiment import ExperimentConfig
+from arize_experiment.config import ExperimentConfig
 from arize_experiment.experiments.base import Experiment, ExperimentError
 
 logger = logging.getLogger(__name__)

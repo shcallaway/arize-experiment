@@ -5,7 +5,7 @@ Arize client initialization and management.
 from arize.pandas.logger import Client
 import logging
 
-from arize_experiment.config.env import ArizeConfig
+from arize_experiment.config import ArizeConfig
 
 logger = logging.getLogger(__name__)
 

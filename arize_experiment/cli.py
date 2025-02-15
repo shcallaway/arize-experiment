@@ -7,9 +7,9 @@ from typing import Tuple
 import click
 import logging
 
-from arize_experiment.client.arize import create_client, ClientError
-from arize_experiment.config.env import get_arize_config, EnvironmentError
-from arize_experiment.config.experiment import create_experiment_config
+from arize_experiment.arize import create_client, ClientError
+from arize_experiment.config import get_arize_config, EnvironmentError
+from arize_experiment.config import create_experiment_config
 from arize_experiment.experiments.base import ExperimentError
 from arize_experiment.experiments.dataset import DatasetExperiment
 
