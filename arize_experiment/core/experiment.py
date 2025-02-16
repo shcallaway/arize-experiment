@@ -51,31 +51,6 @@ class Experiment:
         if not all(isinstance(e, BaseEvaluator) for e in self.evaluators):
             raise ValueError("All evaluators must be instances of BaseEvaluator")
 
-    def validate(self) -> bool:
-        """Validate that the experiment is properly configured.
-        
-        This checks that:
-        1. The task is valid
-        2. All evaluators are valid
-        3. Required metadata is present
-        
-        Returns:
-            bool: True if the experiment is properly configured
-        
-        Raises:
-            ValueError: If the experiment is not properly configured
-        """
-        # Validate task
-        if not self.task.validate():
-            raise ValueError(f"Task validation failed: {self.task.name}")
-
-        # Validate evaluators
-        for evaluator in self.evaluators:
-            if not evaluator.validate():
-                raise ValueError(f"Evaluator validation failed: {evaluator.name}")
-
-        return True
-
     def to_dict(self) -> Dict[str, Any]:
         """Convert experiment to dictionary format.
         

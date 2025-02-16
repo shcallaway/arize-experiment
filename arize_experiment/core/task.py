@@ -39,33 +39,18 @@ class Task(ABC):
         pass
 
     @abstractmethod
-    def execute(self, input_data: Any) -> TaskResult:
+    def execute(self, input: Any) -> TaskResult:
         """Execute the task with the given input.
         
         Args:
-            input_data: The input data for the task. Tasks should document
-                       their expected input types.
+            input: The input data for the task. Tasks should document
+                  their expected input types.
         
         Returns:
             TaskResult containing the output and optional metadata or error.
         
         Raises:
             ValueError: If the input is not of the expected type or format
-        """
-        pass
-
-    @abstractmethod
-    def validate(self) -> bool:
-        """Validate that the task is properly configured.
-        
-        This method should check that any required configuration or dependencies
-        are available and valid.
-        
-        Returns:
-            bool: True if the task is properly configured
-        
-        Raises:
-            ValueError: If the task is not properly configured
         """
         pass
 

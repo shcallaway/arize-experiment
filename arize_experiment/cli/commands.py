@@ -83,17 +83,18 @@ def run(
         numeric: Checks if values are numeric
     """
     try:
-        handler = CommandHandler()
-        handler.run_experiment(
-            name=name,
-            dataset=dataset,
-            description=description,
-            tags=list(tag) if tag else None,
-            evaluator_names=list(evaluator) if evaluator else None,
-        )
-    except HandlerError as e:
-        click.secho(f"\nError: {str(e)}", fg="red", err=True)
-        sys.exit(1)
+        logger.info("Running experiment")
+    #     handler = CommandHandler()
+    #     handler.run_experiment(
+    #         name=name,
+    #         dataset=dataset,
+    #         description=description,
+    #         tags=list(tag) if tag else None,
+    #         evaluator_names=list(evaluator) if evaluator else None,
+    #     )
+    # except HandlerError as e:
+    #     click.secho(f"\nError: {str(e)}", fg="red", err=True)
+    #     sys.exit(1)
     except Exception as e:
         logger.error("Unexpected error", exc_info=True)
         click.secho(f"\nUnexpected error: {str(e)}", fg="red", err=True)
