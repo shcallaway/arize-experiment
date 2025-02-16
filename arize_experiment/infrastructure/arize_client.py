@@ -33,7 +33,23 @@ class ArizeClientConfig:
     api_key: str
     developer_key: str
     space_id: str
-    default_dataset: Optional[str] = None
+
+    def __init__(
+        self,
+        api_key: str,
+        developer_key: str,
+        space_id: str,
+    ):
+        """Initialize the configuration.
+        
+        Args:
+            api_key: Arize API key
+            developer_key: Arize developer key
+            space_id: Arize space ID
+        """
+        self.api_key = api_key
+        self.developer_key = developer_key
+        self.space_id = space_id
 
     def __post_init__(self):
         """Validate the configuration."""
@@ -43,7 +59,6 @@ class ArizeClientConfig:
             raise ConfigurationError("Developer key is required")
         if not self.space_id:
             raise ConfigurationError("Space ID is required")
-
 
 class ArizeClient:
     """Enhanced Arize API client wrapper.
@@ -64,7 +79,7 @@ class ArizeClient:
         Raises:
             ConfigurationError: If configuration is invalid
         """
-        self.config = config
+        self._config = config
         self._client = self._create_client()
         logger.info("Arize client initialized successfully")
 
@@ -79,20 +94,19 @@ class ArizeClient:
         """
         try:
             return ArizeDatasetsClient(
-                api_key=self.config.api_key,
-                developer_key=self.config.developer_key,
+                api_key=self._config.api_key,
+                developer_key=self._config.developer_key,
             )
         except Exception as e:
             error_msg = f"Failed to create Arize client: {str(e)}"
             logger.error(error_msg, exc_info=True)
             raise ConfigurationError(error_msg) from e
 
-    def get_dataset(self, dataset_name: str, space_id: Optional[str] = None) -> Any:
+    def get_dataset(self, dataset: str) -> Any:
         """Get a dataset by name.
         
         Args:
-            dataset_name: Name of the dataset
-            space_id: Optional space ID (uses config default if not provided)
+            dataset: Name of the dataset
         
         Returns:
             Dataset information
@@ -100,31 +114,29 @@ class ArizeClient:
         Raises:
             APIError: If the API call fails
         """
-        space = space_id or self.config.space_id
         try:
-            logger.debug(f"Getting dataset: {dataset_name} in space: {space}")
+            logger.debug(f"Getting dataset: {dataset}")
             return self._client.get_dataset(
-                space_id=space,
-                dataset_name=dataset_name
+                space_id=self._config.space_id,
+                dataset_name=dataset
             )
         except Exception as e:
-            error_msg = f"Failed to get dataset '{dataset_name}': {str(e)}"
+            error_msg = f"Failed to get dataset '{dataset}': {str(e)}"
             logger.error(error_msg, exc_info=True)
             raise APIError(error_msg) from e
 
     def run_experiment(
         self,
-        experiment_name: str,
-        dataset_name: str,
+        experiment: str,
+        dataset: str,
         task: Callable,
         evaluators: Optional[List[Callable]] = None,
-        space_id: Optional[str] = None,
     ) -> Any:
         """Run an experiment.
         
         Args:
-            experiment_name: Name of the experiment
-            dataset_name: Name of the dataset to use
+            experiment: Name of the experiment
+            dataset: Name of the dataset to use
             task: Task function to execute
             evaluators: Optional list of evaluator functions
             space_id: Optional space ID (uses config default if not provided)
@@ -135,43 +147,37 @@ class ArizeClient:
         Raises:
             APIError: If the API call fails
         """
-        space = space_id or self.config.space_id
         try:
             logger.debug(
-                f"Running experiment: {experiment_name} "
-                f"on dataset: {dataset_name} in space: {space}"
+                f"Running experiment: {experiment} "
+                f"on dataset: {dataset} in space: {self._config.space_id}"
             )
             return self._client.run_experiment(
-                space_id=space,
-                dataset_name=dataset_name,
+                space_id=self._config.space_id,
+                dataset_name=dataset,
                 task=task,
                 evaluators=evaluators,
-                experiment_name=experiment_name
+                experiment_name=experiment
             )
         except Exception as e:
-            # Let ArrowKeyError propagate up
-            if "ArrowKeyError" in str(type(e)) and "experiment does not exist" in str(e).lower():
-                raise
             # Wrap other errors in APIError
             error_msg = (
-                f"Failed to run experiment '{experiment_name}' "
-                f"on dataset '{dataset_name}': {str(e)}"
+                f"Failed to run experiment '{experiment}' "
+                f"on dataset '{dataset}': {str(e)}"
             )
             logger.error(error_msg, exc_info=True)
             raise APIError(error_msg) from e
 
     def get_experiment(
         self,
-        experiment_name: str,
-        dataset_name: str,
-        space_id: Optional[str] = None,
+        experiment: str,
+        dataset: str,
     ) -> Any:
         """Get experiment information.
         
         Args:
-            experiment_name: Name of the experiment
-            dataset_name: Name of the dataset
-            space_id: Optional space ID (uses config default if not provided)
+            experiment: Name of the experiment
+            dataset: Name of the dataset
         
         Returns:
             Experiment information
@@ -179,19 +185,20 @@ class ArizeClient:
         Raises:
             APIError: If the API call fails
         """
-        space = space_id or self.config.space_id
         try:
             logger.debug(
-                f"Getting experiment: {experiment_name} "
-                f"from dataset: {dataset_name} in space: {space}"
+                f"Getting experiment: {experiment} "
+                f"from dataset: {dataset} in space: {self._config.space_id}"
             )
             return self._client.get_experiment(
-                space_id=space,
-                experiment_name=experiment_name,
-                dataset_name=dataset_name
+                space_id=self._config.space_id,
+                experiment_name=experiment,
+                dataset_name=dataset
             )
         except Exception as e:
+            # If the experiment does not exist, return None
             if ("Failed to get experiment") in str(e):
                 return None
+            
             # Let other errors propagate up
             raise

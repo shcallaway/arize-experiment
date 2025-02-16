@@ -1,24 +1,31 @@
 from typing import Optional
-import openai
 from arize_experiment.core.task import Task
 from arize_experiment.core.task import TaskResult
+
+from openai import OpenAI
+from openai.types.chat import ChatCompletion
+
+SYSTEM_PROMPT = """
+You are a sentiment analyzer. Classify the following text as either 'positive', 'negative', or 'neutral'. Respond with just one word.
+"""
 
 class SentimentClassificationTask(Task):
     def __init__(
         self,
-        model_name: str = "gpt-4o-mini",
-        api_key: Optional[str] = None,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0,
+        api_key: str = None,
     ):
         """Initialize the sentiment classification task.
         
         Args:
-            model_name: Name of the OpenAI model to use
+            model: Name of the OpenAI model to use
+            temperature: Temperature parameter for model inference
             api_key: OpenAI API key (optional if set in environment)
         """
-        self.model_name = model_name
-        if api_key:
-            openai.api_key = api_key
-        self._validated = False
+        self._model = model
+        self._temperature = temperature
+        self._client = OpenAI(api_key=api_key) if api_key else OpenAI()
 
     @property
     def name(self) -> str:
@@ -33,56 +40,59 @@ class SentimentClassificationTask(Task):
             
         Returns:
             TaskResult containing:
-            - output: Classification result
-            - metadata: Optional processing information
-            - error: Any error message if task failed
+                output: Classification result ('positive', 'negative', or 'neutral')
+                metadata: Processing information including model used
+                error: Any error message if task failed
         """
         try:
-            result = self._classify(input)
+            messages = [
+                {
+                    "role": "system", 
+                    "content": SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": input
+                }
+            ]
+
+            response: ChatCompletion = self._client.chat.completions.create(
+                model=self._model,
+                messages=messages,
+                temperature=self._temperature,
+            )
+
+            sentiment = self._parse_output(response.choices[0].message.content)
+
+            # Ensure we only get valid labels
+            if sentiment not in ["positive", "negative", "neutral"]:
+                sentiment = "neutral"
+            
             return TaskResult(
-                output=result,
+                output=sentiment,
                 metadata={
-                        "model": self.model_name,
-                    }
+                    "model": self._model,
+                }
             )
         except Exception as e:
             return TaskResult(
                 output=None,
                 error=f"Sentiment classification failed: {str(e)}"
             )
-
-    def _classify(
+        
+    def _parse_output(
         self,
         text: str,
     ) -> str:
-        """Internal sentiment classification method.
+        """Parse the output of the sentiment classification task.
         
         Args:
-            text: Single text string
-            
+            text: Raw LLM output text
+        
         Returns:
             Classification result
         """
-        messages = [
-            {
-                "role": "system", 
-                "content": "You are a sentiment analyzer. Classify the following text as either 'positive', 'negative', or 'neutral'. Respond with just one word."
-            },
-            {
-                "role": "user",
-                "content": text
-            }
-        ]
-
-        response = openai.chat.completions.create(
-            model=self.model_name,
-            messages=messages,
-            temperature=0,
-            max_tokens=10,
-        )
-        sentiment = response.choices[0].message.content.strip().lower()
-        # Ensure we only get valid labels
-        if sentiment not in ["positive", "negative", "neutral"]:
-            sentiment = "neutral"
-        
-        return sentiment
+        try:
+            return text.strip().lower()
+        except Exception as e:
+            raise ValueError(f"Failed to parse LLM output: {str(e)}")

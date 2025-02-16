@@ -56,18 +56,3 @@ class BaseEvaluator(ABC):
             ValueError: If the output is not of the expected type or format
         """
         pass
-
-    @abstractmethod
-    def validate(self) -> bool:
-        """Validate that the evaluator is properly configured.
-        
-        This method should check that any required configuration or dependencies
-        are available and valid.
-        
-        Returns:
-            bool: True if the evaluator is properly configured
-        
-        Raises:
-            ValueError: If the evaluator is not properly configured
-        """
-        pass

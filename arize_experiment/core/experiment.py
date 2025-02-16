@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 from arize_experiment.core.evaluator import BaseEvaluator, EvaluationResult
 from arize_experiment.core.task import Task, TaskResult
 
-
 @dataclass
 class ExperimentResult:
     """Result of an experiment run."""

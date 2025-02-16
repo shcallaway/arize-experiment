@@ -109,13 +109,13 @@ pip install -e .
 
 ## Configuration
 
-Create a `.env` file in the project root:
+Create a `.env` file by copying the `.env.example` file.
 
 ```bash
-ARIZE_API_KEY=your_api_key
-ARIZE_SPACE_ID=your_space_id
-ARIZE_DEVELOPER_KEY=your_developer_key
+cp .env.example .env
 ```
+
+Fill in the values for the environment variables.
 
 You can find these values in your Arize account settings.
 
