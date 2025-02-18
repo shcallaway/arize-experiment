@@ -11,6 +11,8 @@ from arize_experiment.tasks.sentiment_classification import SentimentClassificat
 from arize_experiment.evaluators.sentiment_classification_accuracy import (
     SentimentClassificationAccuracyEvaluator,
 )
+from arize_experiment.core.task import Task
+from arize_experiment.tasks.execute_agent import ExecuteAgentTask
 from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
 from dotenv import load_dotenv
 
@@ -19,9 +21,7 @@ logger = logging.getLogger(__name__)
 
 class HandlerError(Exception):
     """Raised when command handling fails."""
-
     pass
-
 
 class Handler:
     """Handles CLI command execution.
@@ -47,18 +47,20 @@ class Handler:
 
     def run(
         self,
-        name: str,
-        dataset: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        evaluators: Optional[List[str]] = None,
+        experiment_name: str,
+        dataset_name: str,
+        task_name: str,
+        raw_tags: Optional[List[str]] = None,
+        evaluator_names: Optional[List[str]] = None,
     ) -> None:
         """Handle the run experiment command.
 
         Args:
-            name: Name of the experiment
-            dataset: Optional dataset name
-            tags: Optional list of key=value tag strings
-            evaluators: Optional list of evaluator names
+            experiment_name: Name of the experiment
+            dataset_name: Name of the dataset
+            task_name: Name of the task
+            raw_tags: Optional list of key=value tag strings
+            evaluator_names: Optional list of evaluator names
 
         Raises:
             HandlerError: If command execution fails
@@ -86,77 +88,75 @@ class Handler:
             except Exception as e:
                 raise HandlerError(f"Failed to initialize Arize client: {str(e)}")
 
-            # Get dataset name from CLI flag or env
-            if not dataset:
-                dataset = self._get_required_env("DATASET")
-            logger.info(f"Using dataset: {dataset}")
-
             # Parse tags
-            parsed_tags = self._parse_tags(tags)
+            parsed_tags = self._parse_tags(raw_tags)
             if parsed_tags:
                 logger.info(f"Using tags: {parsed_tags}")
 
             # Make sure dataset exists
-            logger.info(f"Checking if dataset '{dataset}' exists")
+            logger.info(f"Checking if dataset '{dataset_name}' exists")
             try:
                 dataset_exists = arize_client.get_dataset(
-                    dataset=dataset,
+                    dataset_name=dataset_name,
                 )
             except Exception as e:
                 raise HandlerError(
-                    f"Failed to check if dataset '{dataset}' exists: {str(e)}"
+                    f"Failed to check if dataset '{dataset_name}' exists: {str(e)}"
                 )
 
-            # If the dataset does not exist (DataFrame is empty), raise an error
+            # If the dataset does not exist, raise an error
             if dataset_exists is None:
-                raise HandlerError(f"Dataset '{dataset}' does not exist")
+                raise HandlerError(f"Dataset '{dataset_name}' does not exist")
 
             # Make sure experiment DOES NOT exist
-            logger.info(f"Checking if experiment '{name}' exists")
+            logger.info(f"Checking if experiment '{experiment_name}' exists")
             try:
                 experiment_exists = arize_client.get_experiment(
-                    experiment=name,
-                    dataset=dataset,
+                    experiment_name=experiment_name,
+                    dataset_name=dataset_name,
                 )
             except Exception as e:
                 raise HandlerError(
-                    f"Failed to check if experiment '{name}' exists: {str(e)}"
+                    f"Failed to check if experiment '{experiment_name}' exists: {str(e)}"
                 )
 
             # If the experiment already exists, raise an error
             if experiment_exists is not None:
-                logger.error(f"Experiment '{name}' already exists")
-                raise HandlerError(f"Experiment '{name}' already exists")
+                logger.error(f"Experiment '{experiment_name}' already exists")
+                raise HandlerError(f"Experiment '{experiment_name}' already exists")
 
-            # Create evaluator instances
-            evaluators = self._create_evaluators(evaluators)
+            # Create task callable
+            task = self._create_task(task_name)
 
-            # Set the task to "sentiment_classification"
-            # TODO(Sherwood): Make this configurable via a --task flag
-            task = SentimentClassificationTask()
+            # Make sure evaluators are provided
+            if len(evaluator_names) <= 0:
+                raise HandlerError("No evaluators provided")
+
+            # Create evaluator callables
+            evaluators = self._create_evaluators(evaluator_names)
 
             # Run experiment
-            logger.info(f"Running experiment: {name}")
+            logger.info(f"Running experiment: {experiment_name}")
             result = arize_client.run_experiment(
-                experiment=name,
-                dataset=dataset,
+                experiment_name=experiment_name,
+                dataset_name=dataset_name,
                 task=task,
-                evaluators=evaluators if evaluators else None,
+                evaluators=evaluators,
             )
 
             # Print the result of the experiment
             logger.debug(f"Experiment result: {result}")
             if hasattr(result, "success"):
                 if result.success:
-                    click.secho(f"\nSuccessfully ran experiment '{name}'", fg="green")
+                    click.secho(f"\nSuccessfully ran experiment '{experiment_name}'", fg="green")
                 else:
                     click.secho(
-                        f"\nExperiment '{name}' failed: {result.error}", fg="red"
+                        f"\nExperiment '{experiment_name}' failed: {result.error}", fg="red"
                     )
             else:
                 # Handle raw Arize API result
                 click.secho(
-                    f"\nExperiment '{name}' completed. Result: {result}", fg="green"
+                    f"\nExperiment '{experiment_name}' completed. Result: {result}", fg="green"
                 )
 
         except Exception as e:
@@ -186,11 +186,11 @@ class Handler:
         """
         return self._get_required_env("ARIZE_DEVELOPER_KEY")
 
-    def _parse_tags(self, tag_list: Optional[List[str]]) -> Optional[Dict[str, str]]:
+    def _parse_tags(self, raw_tags: Optional[List[str]]) -> Optional[Dict[str, str]]:
         """Parse tag strings into a dictionary.
 
         Args:
-            tag_list: Optional list of key=value strings
+            raw_tags: Optional list of key=value strings
 
         Returns:
             Dictionary of parsed tags or None
@@ -198,11 +198,11 @@ class Handler:
         Raises:
             HandlerError: If tag format is invalid
         """
-        if not tag_list:
+        if not raw_tags:
             return None
 
         tags = {}
-        for tag in tag_list:
+        for tag in raw_tags:
             try:
                 key, value = tag.split("=", 1)
                 tags[key.strip()] = value.strip()
@@ -218,6 +218,9 @@ class Handler:
 
         Returns:
             SentimentClassificationAccuracyEvaluator instance
+
+        Raises:
+            HandlerError: If the evaluator cannot be created
         """
         try:
             api_key = self._get_required_env("OPENAI_API_KEY")
@@ -229,32 +232,84 @@ class Handler:
                 f"Failed to create sentiment classification accuracy evaluator: {str(e)}"
             )
 
-    def _create_execute_agent_evaluator(
+    def _create_execute_agent_task(
         self,
     ):
-        """Create an execute agent evaluator.
+        """Create an execute agent task.
 
         Returns:
-            ExecuteAgentEvaluator instance
+            ExecuteAgentTask instance
+
+        Raises:
+            HandlerError: If the task cannot be created
+        """
+        try:
+            return ExecuteAgentTask(
+                url="http://localhost:8080",
+            )
+        except Exception as e:
+            raise HandlerError(
+                f"Failed to create execute agent task: {str(e)}"
+            )
+    
+    def _create_task(
+        self,
+        task_name: str,
+    ) -> Task:
+        """Create a task instance.
+
+        Args:
+            task_name: Name of the task
+
+        Returns:
+            Task instance
+
+        Raises:
+            HandlerError: If the task cannot be created
+        """
+        if task_name == "execute_agent":
+            return self._create_execute_agent_task()
+        elif task_name == "sentiment_classification":
+            return self._create_sentiment_classification_task()
+        else:
+            raise HandlerError(f"Unknown task: {task_name}")
+        
+    def _create_sentiment_classification_task(
+        self,
+    ) -> SentimentClassificationTask:
+        """Create a sentiment classification task instance.
         """
         pass
-        # try:
-        #     api_key = self._get_required_env("OPENAI_API_KEY")
-        #     return ExecuteAgentEvaluator(
-        #         api_key=api_key,
-        #     )
-        # except Exception as e:
-        #     raise HandlerError(
-        #         f"Failed to create execute agent evaluator: {str(e)}"
-        #     )
+
+    def _create_execute_agent_task(
+        self,
+        name: str,
+    ) -> ExecuteAgentTask:
+        """Create a task instance.
+
+        Args:
+            name: Name of the task
+
+        Returns:
+            Task instance
+
+        Raises:
+            HandlerError: If the task cannot be created
+        """
+        if name == "execute_agent":
+            return ExecuteAgentTask()
+        elif name == "sentiment_classification":
+            return SentimentClassificationTask()
+        else:
+            raise HandlerError(f"Unknown task: {name}")
         
     def _create_evaluators(
-        self, evaluator_names: Optional[List[str]]
+        self, names: Optional[List[str]]
     ) -> List[BaseEvaluator]:
         """Create evaluator instances from names.
 
         Args:
-            evaluator_names: Optional list of evaluator names
+            names: Optional list of evaluator names
 
         Returns:
             List of evaluator instances
@@ -262,20 +317,19 @@ class Handler:
         Raises:
             HandlerError: If an evaluator cannot be created
         """
-        if not evaluator_names:
+        if not names:
             return []
 
         evaluators = []
 
         # For each evaluator name, create an evaluator instance
-        for name in evaluator_names:
+        for name in names:
             if name == "sentiment_classification_accuracy":
                 evaluator = self._create_sentiment_classification_accuracy_evaluator()
             elif name == "execute_agent":
                 evaluator = self._create_execute_agent_evaluator()
             else:
                 raise HandlerError(f"Unknown evaluator: {name}")
-
             evaluators.append(evaluator)
 
         return evaluators

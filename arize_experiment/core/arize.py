@@ -85,11 +85,11 @@ class ArizeClient:
             logger.error(error_msg, exc_info=True)
             raise ArizeClientError(error_msg) from e
 
-    def get_dataset(self, dataset: str) -> Any:
+    def get_dataset(self, dataset_name: str) -> Any:
         """Get a dataset by name.
 
         Args:
-            dataset: Name of the dataset
+            dataset_name: Name of the dataset
 
         Returns:
             Dataset information
@@ -98,9 +98,9 @@ class ArizeClient:
             ArizeClientApiError: If the API call fails
         """
         try:
-            logger.debug(f"Getting dataset: {dataset}")
+            logger.debug(f"Getting dataset: {dataset_name}")
             return self._client.get_dataset(
-                space_id=self._space_id, dataset_name=dataset
+                space_id=self._space_id, dataset_name=dataset_name
             )
         except Exception as e:
             # If the dataset does not exist, return None
@@ -112,16 +112,16 @@ class ArizeClient:
 
     def run_experiment(
         self,
-        experiment: str,
-        dataset: str,
+        experiment_name: str,
+        dataset_name: str,
         task: Callable,
         evaluators: Optional[List[Callable]] = None,
     ) -> Any:
         """Run an experiment.
 
         Args:
-            experiment: Name of the experiment
-            dataset: Name of the dataset to use
+            experiment_name: Name of the experiment
+            dataset_name: Name of the dataset to use
             task: Task function to execute
             evaluators: Optional list of evaluator functions
             space_id: Optional space ID (uses config default if not provided)
@@ -134,34 +134,34 @@ class ArizeClient:
         """
         try:
             logger.debug(
-                f"Running experiment: {experiment} "
-                f"on dataset: {dataset} in space: {self._space_id}"
+                f"Running experiment: {experiment_name} "
+                f"on dataset: {dataset_name} in space: {self._space_id}"
             )
             return self._client.run_experiment(
                 space_id=self._space_id,
-                dataset_name=dataset,
+                dataset_name=dataset_name,
                 task=task,
                 evaluators=evaluators,
-                experiment_name=experiment,
+                experiment_name=experiment_name,
             )
         except Exception as e:
             error_msg = (
-                f"Failed to run experiment '{experiment}' "
-                f"on dataset '{dataset}': {str(e)}"
+                f"Failed to run experiment '{experiment_name}' "
+                f"on dataset '{dataset_name}': {str(e)}"
             )
             logger.error(error_msg, exc_info=True)
             raise ArizeClientApiError(error_msg) from e
 
     def get_experiment(
         self,
-        experiment: str,
-        dataset: str,
+        experiment_name: str,
+        dataset_name: str,
     ) -> Any:
         """Get experiment information.
 
         Args:
-            experiment: Name of the experiment
-            dataset: Name of the dataset
+            experiment_name: Name of the experiment
+            dataset_name: Name of the dataset
 
         Returns:
             Experiment information
@@ -171,13 +171,13 @@ class ArizeClient:
         """
         try:
             logger.debug(
-                f"Getting experiment: {experiment} "
-                f"from dataset: {dataset} in space: {self._space_id}"
+                f"Getting experiment: {experiment_name} "
+                f"from dataset: {dataset_name} in space: {self._space_id}"
             )
             return self._client.get_experiment(
                 space_id=self._space_id,
-                experiment_name=experiment,
-                dataset_name=dataset,
+                experiment_name=experiment_name,
+                dataset_name=dataset_name,
             )
         except Exception as e:
             # If the experiment does not exist, return None

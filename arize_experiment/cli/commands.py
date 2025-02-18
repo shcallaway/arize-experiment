@@ -41,8 +41,14 @@ def cli():
 @click.option(
     "--dataset",
     "-d",
-    required=False,
-    help="Name of the dataset to use (uses DATASET from .env if not provided)",
+    required=True,
+    help="Name of the dataset to use",
+)
+@click.option(
+    "--task",
+    "-t",
+    required=True,
+    help="Name of the task to use",
 )
 @click.option(
     "--tag",
@@ -59,6 +65,7 @@ def cli():
 def run(
     name: str,
     dataset: Optional[str],
+    task: Optional[str],
     tag: Tuple[str, ...],
     evaluator: Tuple[str, ...],
 ):
@@ -73,6 +80,10 @@ def run(
     Tags can be added using the --tag option multiple times:
         $ arize-experiment run -n exp-1 -d data-1 -t type=test -t env=prod
 
+    Available tasks:
+        sentiment_classification: Classifies the sentiment of a text
+        execute_agent: Executes an agent by calling a web server
+
     Available evaluators:
         sentiment_classification_accuracy: Evaluates whether the sentiment
             classification is accurate
@@ -86,10 +97,11 @@ def run(
 
         # Run the experiment
         handler.run(
-            name=name,
-            dataset=dataset,
-            tags=list(tag) if tag else None,
-            evaluators=list(evaluator) if evaluator else None,
+            experiment_name=name,
+            dataset_name=dataset,
+            task_name=task,
+            raw_tags=list(tag) if tag else None,
+            evaluator_names=list(evaluator) if evaluator else None,
         )
     except Exception as e:
         logger.error("Unexpected error", exc_info=True)
