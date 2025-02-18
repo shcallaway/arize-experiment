@@ -3,8 +3,9 @@ Evaluator for judging the accuracy of sentiment classifications using OpenAI's A
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 
+from arize_experiment.core.task import TaskResult
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
@@ -71,7 +72,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         except Exception as e:
             raise ValueError(f"Failed to parse LLM output: {str(e)}")
 
-    def evaluate(self, output: str) -> EvaluationResult:
+    def evaluate(self, task_result: TaskResult) -> EvaluationResult:
         """Evaluate whether the sentiment classification is accurate.
 
         Args:
@@ -86,12 +87,15 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         Raises:
             ValueError: If output format is invalid or API call fails
         """
-        # Get the original input text and the task output.
-        # We have to do this b/c I couldn't find another way to access
-        # the original input text from within the evaluator...
-        # so we are threading the input through the output dict.
-        input = output["input"]
-        output = output["output"]
+        logger.info(f"Evaluating sentiment classification accuracy")
+        logger.debug(f"Task result: {task_result}")
+
+        # Get the original input text and sentiment classification from the task result
+        input = task_result.input["input"]
+        sentiment = task_result.output
+
+        logger.info(f"Input: {input}")
+        logger.info(f"Sentiment: {sentiment}")
 
         try:
             messages = [
@@ -103,7 +107,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                     "role": "user",
                     "content": (
                         f"Input: {input}\n"
-                        f"Classification: {output}"
+                        f"Classification: {sentiment}"
                     ),
                 },
             ]
@@ -127,15 +131,24 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         except Exception as e:
             raise ValueError(f"Sentiment accuracy evaluation failed: {str(e)}")
 
-    def __call__(self, output: Any) -> Any:
+    def __call__(self, task_result: Any) -> Any:
         """Make the evaluator callable by delegating to evaluate.
         
         This allows evaluators to be used directly as functions.
 
         Args:
-            output: The output to evaluate
+            task_result: The task result to evaluate
 
         Returns:
             The evaluation result
         """
-        return self.evaluate(output)
+        # If task_result is a dictionary, convert it to a TaskResult
+        if isinstance(task_result, dict):
+            task_result = TaskResult(
+                input=task_result["input"],
+                output=task_result["output"],
+                metadata=task_result.get("metadata", {}),
+                error=task_result.get("error", None)
+            )
+
+        return self.evaluate(task_result)

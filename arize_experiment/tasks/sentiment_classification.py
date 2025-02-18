@@ -82,14 +82,8 @@ class SentimentClassificationTask(Task):
             logger.info(f"Finishing sentiment classification task")
 
             return TaskResult(
-                # We have to thread the original input text through to
-                # the evaluator by passing it in the output dict. This is
-                # not ideal, but I couldn't find another way to get it to
-                # the evaluator... This is a hacky workaround.
-                output={
-                    "input": Input,
-                    "output": sentiment,
-                },
+                input=Input,
+                output=sentiment,
                 metadata={
                     "model": self._model,
                 },

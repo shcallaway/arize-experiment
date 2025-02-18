@@ -11,6 +11,7 @@ from arize_experiment.core.errors import TaskError
 class TaskResult:
     """Standardized result type for all tasks."""
 
+    input: Dict[str, Any] # The input data for the task
     output: Any  # The task's output
     metadata: Optional[Dict[str, Any]] = None  # Optional metadata about the execution
     error: Optional[str] = None  # Error message if task failed
@@ -78,5 +79,4 @@ class Task(ABC):
         result = self.execute(Input)
         if result.error:
             raise TaskError(result.error)
-        # TODO: Change this so it returns the whole TaskResult object
-        return result.output
+        return result
