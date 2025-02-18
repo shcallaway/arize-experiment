@@ -64,14 +64,14 @@ class ArizeClient:
         developer_key: str,
     ) -> ArizeDatasetsClient:
         """Create the Arize datasets client.
-        
+
         Args:
             api_key: Arize API key
             developer_key: Arize developer key
-            
+
         Returns:
             Initialized ArizeDatasetsClient
-            
+
         Raises:
             ArizeClientError: If client creation fails
         """
@@ -83,8 +83,7 @@ class ArizeClient:
             )
         except Exception as e:
             raise ArizeClientError(
-                "Failed to create Arize datasets client",
-                details={"error": str(e)}
+                "Failed to create Arize datasets client", details={"error": str(e)}
             )
 
     def get_dataset(self, dataset_name: str) -> Any:
@@ -108,10 +107,10 @@ class ArizeClient:
             error_msg = str(e).lower()
             if "not found" in error_msg or "does not exist" in error_msg:
                 return None
-                
+
             raise ArizeClientError(
                 f"Error retrieving dataset '{dataset_name}'",
-                details={"dataset_name": dataset_name, "error": str(e)}
+                details={"dataset_name": dataset_name, "error": str(e)},
             )
 
     def run_experiment(
@@ -157,8 +156,8 @@ class ArizeClient:
                 details={
                     "experiment_name": experiment_name,
                     "dataset_name": dataset_name,
-                    "error": str(e)
-                }
+                    "error": str(e),
+                },
             )
 
     def get_experiment(
@@ -197,8 +196,8 @@ class ArizeClient:
             #     "Flight returned not found error" in error_str
             #     or "experiment does not exist" in error_str
             #     or (
-            #         hasattr(e, "__cause__") 
-            #         and e.__cause__ is not None 
+            #         hasattr(e, "__cause__")
+            #         and e.__cause__ is not None
             #         and (
             #             "Flight returned not found error" in str(e.__cause__)
             #             or "experiment does not exist" in str(e.__cause__)
@@ -206,7 +205,7 @@ class ArizeClient:
             #     )
             # ):
             #     return None
-                
+
             # # If the error was something other than a "not found" error, re-raise
             # raise ArizeClientError(
             #     f"Error retrieving experiment '{experiment_name}'",

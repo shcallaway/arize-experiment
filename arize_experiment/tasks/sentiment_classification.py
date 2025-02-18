@@ -60,7 +60,7 @@ class SentimentClassificationTask(Task):
                     # Get the actual input text from off the input dict.
                     # This is necessary b/c the input param is actually a dict,
                     # and the input text is nested inside that dict.
-                    "content": Input["input"]
+                    "content": Input["input"],
                 },
             ]
 

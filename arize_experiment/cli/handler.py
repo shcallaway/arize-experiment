@@ -66,8 +66,7 @@ class Handler:
             )
         except Exception as e:
             raise HandlerError(
-                "Failed to create Arize client configuration",
-                details={"error": str(e)}
+                "Failed to create Arize client configuration", details={"error": str(e)}
             )
 
         # Initialize Arize client
@@ -78,8 +77,7 @@ class Handler:
             )
         except Exception as e:
             raise HandlerError(
-                "Failed to initialize Arize client",
-                details={"error": str(e)}
+                "Failed to initialize Arize client", details={"error": str(e)}
             )
 
         # Parse tags
@@ -96,14 +94,14 @@ class Handler:
         except Exception as e:
             raise ConfigurationError(
                 f"Failed to check if dataset '{dataset_name}' exists",
-                details={"error": str(e)}
+                details={"error": str(e)},
             )
 
         # If the dataset does not exist, raise an error
         if dataset_exists is None:
             raise ConfigurationError(
                 f"Dataset '{dataset_name}' does not exist",
-                details={"dataset_name": dataset_name}
+                details={"dataset_name": dataset_name},
             )
 
         # Make sure experiment DOES NOT exist
@@ -116,7 +114,7 @@ class Handler:
         except Exception as e:
             raise HandlerError(
                 f"Failed to check if experiment '{experiment_name}' exists",
-                details={"error": str(e)}
+                details={"error": str(e)},
             )
 
         # If the experiment already exists, raise an error
@@ -125,8 +123,8 @@ class Handler:
                 f"Experiment '{experiment_name}' already exists",
                 details={
                     "experiment_name": experiment_name,
-                    "dataset_name": dataset_name
-                }
+                    "dataset_name": dataset_name,
+                },
             )
 
         # Create task callable
@@ -154,15 +152,17 @@ class Handler:
                 details={
                     "experiment_name": experiment_name,
                     "dataset_name": dataset_name,
-                    "error": str(e)
-                }
+                    "error": str(e),
+                },
             )
 
         # Print the result of the experiment
         logger.debug(f"Experiment result: {result}")
         if hasattr(result, "success"):
             if result.success:
-                click.secho(f"\nSuccessfully ran experiment '{experiment_name}'", fg="green")
+                click.secho(
+                    f"\nSuccessfully ran experiment '{experiment_name}'", fg="green"
+                )
             else:
                 click.secho(
                     f"\nExperiment '{experiment_name}' failed: {result.error}", fg="red"
@@ -170,9 +170,9 @@ class Handler:
         else:
             # Handle raw Arize API result
             click.secho(
-                f"\nExperiment '{experiment_name}' completed. Result: {result}", fg="green"
+                f"\nExperiment '{experiment_name}' completed. Result: {result}",
+                fg="green",
             )
-
 
     def _get_arize_api_key(self) -> str:
         """Get the Arize API key.
@@ -219,7 +219,9 @@ class Handler:
                 key, value = tag.split("=", 1)
                 tags[key.strip()] = value.strip()
             except ValueError:
-                raise ConfigurationError(f"Invalid tag format: {tag}. Use key=value format.")
+                raise ConfigurationError(
+                    f"Invalid tag format: {tag}. Use key=value format."
+                )
 
         return tags
 
@@ -260,10 +262,8 @@ class Handler:
                 url="http://localhost:8080",
             )
         except Exception as e:
-            raise HandlerError(
-                f"Failed to create execute agent task: {str(e)}"
-            )
-    
+            raise HandlerError(f"Failed to create execute agent task: {str(e)}")
+
     def _create_task(
         self,
         task_name: str,
@@ -285,7 +285,7 @@ class Handler:
             return self._create_sentiment_classification_task()
         else:
             raise HandlerError(f"Unknown task: {task_name}")
-        
+
     def _create_sentiment_classification_task(
         self,
     ) -> SentimentClassificationTask:
@@ -308,9 +308,7 @@ class Handler:
                 f"Failed to create sentiment classification task: {str(e)}"
             )
 
-    def _create_evaluators(
-        self, names: Optional[List[str]]
-    ) -> List[BaseEvaluator]:
+    def _create_evaluators(self, names: Optional[List[str]]) -> List[BaseEvaluator]:
         """Create evaluator instances from names.
 
         Args:

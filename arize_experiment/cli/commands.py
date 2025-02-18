@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
+
 @click.group()
 def cli():
     """arize-experiment: A tool for running experiments on Arize.
@@ -55,10 +56,12 @@ def cli():
     "--task",
     "-t",
     required=True,
-    type=click.Choice([
-        "sentiment_classification",
-        "execute_agent",
-    ]),
+    type=click.Choice(
+        [
+            "sentiment_classification",
+            "execute_agent",
+        ]
+    ),
     help="Name of the task to use",
 )
 @click.option(
@@ -66,9 +69,11 @@ def cli():
     "-e",
     multiple=True,
     required=True,
-    type=click.Choice([
-        "sentiment_classification_accuracy",
-    ]),
+    type=click.Choice(
+        [
+            "sentiment_classification_accuracy",
+        ]
+    ),
     help="Name of an evaluator to use (can be used multiple times)",
 )
 @click.option(

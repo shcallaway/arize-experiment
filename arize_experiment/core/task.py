@@ -7,11 +7,12 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 from arize_experiment.core.errors import TaskError
 
+
 @dataclass
 class TaskResult:
     """Standardized result type for all tasks."""
 
-    input: Dict[str, Any] # The input data for the task
+    input: Dict[str, Any]  # The input data for the task
     output: Any  # The task's output
     metadata: Optional[Dict[str, Any]] = None  # Optional metadata about the execution
     error: Optional[str] = None  # Error message if task failed
@@ -64,7 +65,7 @@ class Task(ABC):
 
     def __call__(self, Input: Dict[str, Any]) -> Any:
         """Make the task callable by delegating to execute.
-        
+
         This allows tasks to be used directly as functions.
 
         Args:

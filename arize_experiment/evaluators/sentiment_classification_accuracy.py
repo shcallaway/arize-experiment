@@ -67,7 +67,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         try:
             text = text.strip().lower()
             correct = text.startswith("correct")
-            explanation = text[text.find(" "):].strip()
+            explanation = text[text.find(" ") :].strip()
             return correct, explanation
         except Exception as e:
             raise ValueError(f"Failed to parse LLM output: {str(e)}")
@@ -105,10 +105,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 },
                 {
                     "role": "user",
-                    "content": (
-                        f"Input: {input}\n"
-                        f"Classification: {sentiment}"
-                    ),
+                    "content": (f"Input: {input}\n" f"Classification: {sentiment}"),
                 },
             ]
 
@@ -118,7 +115,9 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 temperature=self._temperature,
             )
 
-            correct, explanation = self._parse_output(response.choices[0].message.content)
+            correct, explanation = self._parse_output(
+                response.choices[0].message.content
+            )
 
             label = "correct" if correct else "incorrect"
             score = 1.0 if correct else 0.0
@@ -133,7 +132,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
 
     def __call__(self, task_result: Any) -> Any:
         """Make the evaluator callable by delegating to evaluate.
-        
+
         This allows evaluators to be used directly as functions.
 
         Args:
@@ -148,7 +147,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 input=task_result["input"],
                 output=task_result["output"],
                 metadata=task_result.get("metadata", {}),
-                error=task_result.get("error", None)
+                error=task_result.get("error", None),
             )
 
         return self.evaluate(task_result)

@@ -7,6 +7,7 @@ from typing import Any
 
 from arize.experimental.datasets.experiments.types import EvaluationResult
 
+
 class BaseEvaluator(ABC):
     """Base class for all evaluators.
 

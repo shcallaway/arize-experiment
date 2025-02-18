@@ -26,7 +26,4 @@ class ExecuteAgentTask(Task):
                 metadata: Processing information including model used
                 error: Any error message if task failed
         """
-        return TaskResult(
-            output=None,
-            metadata={}
-        )
+        return TaskResult(output=None, metadata={})

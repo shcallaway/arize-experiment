@@ -27,7 +27,7 @@ class ArizeExperimentError(Exception):
 
 class ArizeClientError(ArizeExperimentError):
     """Base class for client-related errors.
-    
+
     This includes:
     - Authentication issues
     - Network connectivity problems
@@ -36,15 +36,17 @@ class ArizeClientError(ArizeExperimentError):
     - Dataset access issues
     - Experiment creation/retrieval issues
     """
-    
+
     def format_message(self) -> str:
         """Format the error message with troubleshooting tips based on error type."""
         base_msg = super().format_message()
         error_msg = str(self.details.get("error", "")).lower()
-        
+
         # Add specific troubleshooting tips based on error message
         if "unauthorized" in error_msg or "invalid key" in error_msg:
-            return f"{base_msg}\nTip: Check your API key and credentials in the .env file"
+            return (
+                f"{base_msg}\nTip: Check your API key and credentials in the .env file"
+            )
         if "connection" in error_msg or "timeout" in error_msg:
             return f"{base_msg}\nTip: Check your internet connection and try again"
         if "rate limit" in error_msg:
@@ -53,53 +55,58 @@ class ArizeClientError(ArizeExperimentError):
             return f"{base_msg}\nTip: Use a different experiment name or delete the existing experiment"
         if "not found" in error_msg or "does not exist" in error_msg:
             return f"{base_msg}\nTip: Verify that the resource exists and you have access to it"
-            
+
         return base_msg
+
 
 class ConfigurationError(ArizeExperimentError):
     """Error related to configuration issues."""
-    
+
     def format_message(self) -> str:
         """Format the error message with troubleshooting tips based on error type."""
         base_msg = super().format_message()
         return f"{base_msg}\nTip: Check your configuration file and ensure all required values are present"
-    
+
+
 class HandlerError(ArizeExperimentError):
     """Error related to command handling issues."""
-    
+
     def format_message(self) -> str:
         """Format the error message with troubleshooting tips based on error type."""
         base_msg = super().format_message()
         return f"{base_msg}\nTip: Check your command and ensure all required values are present"
-    
+
+
 class EvaluatorError(ArizeExperimentError):
     """Error related to evaluator issues."""
-    
+
     def format_message(self) -> str:
         """Format the error message with troubleshooting tips based on error type."""
         base_msg = super().format_message()
         return f"{base_msg}\nTip: Check your evaluator and ensure all required values are present"
-    
+
+
 class TaskError(ArizeExperimentError):
     """Error related to task issues."""
-    
+
     def format_message(self) -> str:
         """Format the error message with troubleshooting tips based on error type."""
         base_msg = super().format_message()
         return f"{base_msg}\nTip: Check your task and ensure all required values are present"
 
+
 def pretty_print_error(error: Exception) -> str:
     """Format an error into a user-friendly message.
-    
+
     Args:
         error: The exception to format
-        
+
     Returns:
         A user-friendly error message
     """
     if isinstance(error, ArizeExperimentError):
         return str(error)
-    
+
     # Map common error types to user-friendly messages
     if isinstance(error, ValueError):
         return f"Invalid input: {str(error)}"
@@ -107,6 +114,6 @@ def pretty_print_error(error: Exception) -> str:
         return f"Missing required value: {str(error)}"
     if isinstance(error, FileNotFoundError):
         return f"File not found: {str(error)}"
-    
+
     # Generic error message for unknown error types
-    return f"An unexpected error occurred: {str(error)}" 
+    return f"An unexpected error occurred: {str(error)}"
