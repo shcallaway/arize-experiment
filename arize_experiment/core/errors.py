@@ -52,9 +52,15 @@ class ArizeClientError(ArizeExperimentError):
         if "rate limit" in error_msg:
             return f"{base_msg}\nTip: Please wait a moment and try again"
         if "already exists" in error_msg:
-            return f"{base_msg}\nTip: Use a different experiment name or delete the existing experiment"
+            return (
+                f"{base_msg}\n"
+                "Tip: Use a different experiment name or delete the existing experiment"
+            )
         if "not found" in error_msg or "does not exist" in error_msg:
-            return f"{base_msg}\nTip: Verify that the resource exists and you have access to it"
+            return (
+                f"{base_msg}\n"
+                "Tip: Verify that the resource exists and you have access to it"
+            )
 
         return base_msg
 
@@ -65,7 +71,10 @@ class ConfigurationError(ArizeExperimentError):
     def format_message(self) -> str:
         """Format the error message with troubleshooting tips based on error type."""
         base_msg = super().format_message()
-        return f"{base_msg}\nTip: Check your configuration file and ensure all required values are present"
+        return (
+            f"{base_msg}\n"
+            "Tip: Check your configuration file and ensure all required values are present"
+        )
 
 
 class HandlerError(ArizeExperimentError):

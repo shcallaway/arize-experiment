@@ -70,7 +70,7 @@ class SentimentClassificationTask(Task):
                 temperature=self._temperature,
             )
 
-            logger.info(f"OpenAI chat completion request successful")
+            logger.info("OpenAI chat completion request successful")
 
             sentiment = self._parse_llm_output(response.choices[0].message.content)
 
@@ -79,7 +79,7 @@ class SentimentClassificationTask(Task):
                 sentiment = "neutral"
 
             logger.info(f"Sentiment: {sentiment}")
-            logger.info(f"Finishing sentiment classification task")
+            logger.info("Finishing sentiment classification task")
 
             return TaskResult(
                 input=Input,

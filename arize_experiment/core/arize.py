@@ -187,31 +187,5 @@ class ArizeClient:
                 experiment_name=experiment_name,
                 dataset_name=dataset_name,
             )
-        except Exception as e:
+        except Exception:
             return None
-            # # Check if this is a "not found" error from the original exception
-            # # Look for both the Arrow error and the wrapped RuntimeError
-            # error_str = str(e)
-            # if (
-            #     "Flight returned not found error" in error_str
-            #     or "experiment does not exist" in error_str
-            #     or (
-            #         hasattr(e, "__cause__")
-            #         and e.__cause__ is not None
-            #         and (
-            #             "Flight returned not found error" in str(e.__cause__)
-            #             or "experiment does not exist" in str(e.__cause__)
-            #         )
-            #     )
-            # ):
-            #     return None
-
-            # # If the error was something other than a "not found" error, re-raise
-            # raise ArizeClientError(
-            #     f"Error retrieving experiment '{experiment_name}'",
-            #     details={
-            #         "experiment_name": experiment_name,
-            #         "dataset_name": dataset_name,
-            #         "error": str(e)
-            #     }
-            # )

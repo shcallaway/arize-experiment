@@ -67,7 +67,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         try:
             text = text.strip().lower()
             correct = text.startswith("correct")
-            explanation = text[text.find(" ") :].strip()
+            explanation = text[text.find(" ")].strip()
             return correct, explanation
         except Exception as e:
             raise ValueError(f"Failed to parse LLM output: {str(e)}")
@@ -87,7 +87,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         Raises:
             ValueError: If output format is invalid or API call fails
         """
-        logger.info(f"Evaluating sentiment classification accuracy")
+        logger.info("Evaluating sentiment classification accuracy")
         logger.debug(f"Task result: {task_result}")
 
         # Get the original input text and sentiment classification from the task result
