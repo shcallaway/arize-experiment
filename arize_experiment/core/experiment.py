@@ -5,7 +5,7 @@ Core experiment domain model for arize-experiment.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from arize_experiment.core.evaluator import BaseEvaluator, EvaluationResult
+from arize_experiment.core.evaluator import BaseEvaluator, EvaluatorResult
 from arize_experiment.core.task import Task, TaskResult
 
 
@@ -14,7 +14,7 @@ class ExperimentResult:
     """Result of an experiment run."""
 
     task_result: TaskResult
-    evaluations: List[EvaluationResult]
+    evaluations: List[EvaluatorResult]
     metadata: Dict[str, Any] = field(default_factory=dict)
     error: Optional[str] = None
 

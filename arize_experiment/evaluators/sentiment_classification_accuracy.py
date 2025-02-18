@@ -8,7 +8,7 @@ from typing import Any, Optional, Tuple
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
-from arize_experiment.core.evaluator import BaseEvaluator, EvaluationResult
+from arize_experiment.core.evaluator import BaseEvaluator, EvaluatorResult
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         except Exception as e:
             raise ValueError(f"Failed to parse LLM output: {str(e)}")
 
-    def evaluate(self, output: Any) -> EvaluationResult:
+    def evaluate(self, output: Any) -> EvaluatorResult:
         """Evaluate whether the sentiment classification is accurate.
 
         Args:
@@ -122,12 +122,23 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 response.choices[0].message.content
             )
 
-            return EvaluationResult(
+            return EvaluatorResult(
                 score=1.0 if correct else 0.0,
                 label="correct" if correct else "incorrect",
                 explanation=explanation,
             )
         except Exception as e:
-            error_msg = f"Sentiment accuracy evaluation failed: {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            raise ValueError(error_msg)
+            raise ValueError(f"Sentiment accuracy evaluation failed: {str(e)}")
+
+    def __call__(self, output: Any) -> Any:
+        """Make the evaluator callable by delegating to evaluate.
+        
+        This allows evaluators to be used directly as functions.
+
+        Args:
+            output: The output to evaluate
+
+        Returns:
+            The evaluation result
+        """
+        return self.evaluate(output)

@@ -1,6 +1,6 @@
 from arize_experiment.core.task import Task
 from arize_experiment.core.task import TaskResult
-
+from arize_experiment.core.errors import TaskError
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
@@ -89,4 +89,4 @@ class SentimentClassificationTask(Task):
         try:
             return text.strip().lower()
         except Exception as e:
-            raise ValueError(f"Failed to parse LLM output: {str(e)}")
+            raise TaskError(f"Failed to parse LLM output: {str(e)}")

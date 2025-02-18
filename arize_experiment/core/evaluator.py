@@ -6,9 +6,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from arize_experiment.core.errors import EvaluatorError
 
 @dataclass
-class EvaluationResult:
+class EvaluatorResult:
     """Standardized result type for all evaluators."""
 
     score: float  # Normalized score between 0 and 1
@@ -18,9 +19,9 @@ class EvaluationResult:
     def __post_init__(self):
         """Validate the evaluation result."""
         if not 0 <= self.score <= 1:
-            raise ValueError(f"Score must be between 0 and 1, got {self.score}")
+            raise EvaluatorError(f"Score must be between 0 and 1, got {self.score}")
         if not self.label:
-            raise ValueError("Label cannot be empty")
+            raise EvaluatorError("Label cannot be empty")
 
 
 class BaseEvaluator(ABC):
@@ -41,7 +42,7 @@ class BaseEvaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, output: Any) -> EvaluationResult:
+    def evaluate(self, output: Any) -> EvaluatorResult:
         """Evaluate the given output and return a standardized result.
 
         Args:
@@ -49,10 +50,10 @@ class BaseEvaluator(ABC):
                    should document their expected input types.
 
         Returns:
-            EvaluationResult containing the normalized score, label, and optional
+            EvaluatorResult containing the normalized score, label, and optional
             explanation.
 
         Raises:
-            ValueError: If the output is not of the expected type or format
+            EvaluatorError: If the evaluator fails to evaluate the output
         """
         pass

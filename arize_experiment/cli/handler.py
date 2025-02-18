@@ -14,14 +14,15 @@ from arize_experiment.evaluators.sentiment_classification_accuracy import (
 from arize_experiment.core.task import Task
 from arize_experiment.tasks.execute_agent import ExecuteAgentTask
 from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
+from arize_experiment.core.errors import (
+    ConfigurationError,
+    HandlerError,
+    pretty_print_error,
+)
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
-
-class HandlerError(Exception):
-    """Raised when command handling fails."""
-    pass
 
 class Handler:
     """Handles CLI command execution.
@@ -65,102 +66,123 @@ class Handler:
         Raises:
             HandlerError: If command execution fails
         """
+        # Get Arize values from env
+        logger.debug("Creating Arize client configuration")
         try:
-            # Get Arize values from env
-            logger.debug("Creating Arize client configuration")
-            try:
-                arize_config = ArizeClientConfiguration(
-                    api_key=self._get_arize_api_key(),
-                    space_id=self._get_arize_space_id(),
-                    developer_key=self._get_arize_developer_key(),
-                )
-            except Exception as e:
-                raise HandlerError(
-                    f"Failed to create Arize client configuration: {str(e)}"
-                )
+            arize_config = ArizeClientConfiguration(
+                api_key=self._get_arize_api_key(),
+                space_id=self._get_arize_space_id(),
+                developer_key=self._get_arize_developer_key(),
+            )
+        except Exception as e:
+            raise HandlerError(
+                "Failed to create Arize client configuration",
+                details={"error": str(e)}
+            )
 
-            # Initialize Arize client
-            logger.debug("Initializing Arize client")
-            try:
-                arize_client = ArizeClient(
-                    config=arize_config,
-                )
-            except Exception as e:
-                raise HandlerError(f"Failed to initialize Arize client: {str(e)}")
+        # Initialize Arize client
+        logger.debug("Initializing Arize client")
+        try:
+            arize_client = ArizeClient(
+                config=arize_config,
+            )
+        except Exception as e:
+            raise HandlerError(
+                "Failed to initialize Arize client",
+                details={"error": str(e)}
+            )
 
-            # Parse tags
-            parsed_tags = self._parse_tags(raw_tags)
-            if parsed_tags:
-                logger.info(f"Using tags: {parsed_tags}")
+        # Parse tags
+        parsed_tags = self._parse_tags(raw_tags)
+        if parsed_tags:
+            logger.info(f"Using tags: {parsed_tags}")
 
-            # Make sure dataset exists
-            logger.info(f"Checking if dataset '{dataset_name}' exists")
-            try:
-                dataset_exists = arize_client.get_dataset(
-                    dataset_name=dataset_name,
-                )
-            except Exception as e:
-                raise HandlerError(
-                    f"Failed to check if dataset '{dataset_name}' exists: {str(e)}"
-                )
+        # Make sure dataset exists
+        logger.info(f"Checking if dataset '{dataset_name}' exists")
+        try:
+            dataset_exists = arize_client.get_dataset(
+                dataset_name=dataset_name,
+            )
+        except Exception as e:
+            raise ConfigurationError(
+                f"Failed to check if dataset '{dataset_name}' exists",
+                details={"error": str(e)}
+            )
 
-            # If the dataset does not exist, raise an error
-            if dataset_exists is None:
-                raise HandlerError(f"Dataset '{dataset_name}' does not exist")
+        # If the dataset does not exist, raise an error
+        if dataset_exists is None:
+            raise ConfigurationError(
+                f"Dataset '{dataset_name}' does not exist",
+                details={"dataset_name": dataset_name}
+            )
 
-            # Make sure experiment DOES NOT exist
-            logger.info(f"Checking if experiment '{experiment_name}' exists")
-            try:
-                experiment_exists = arize_client.get_experiment(
-                    experiment_name=experiment_name,
-                    dataset_name=dataset_name,
-                )
-            except Exception as e:
-                raise HandlerError(
-                    f"Failed to check if experiment '{experiment_name}' exists: {str(e)}"
-                )
+        # Make sure experiment DOES NOT exist
+        logger.info(f"Checking if experiment '{experiment_name}' exists")
+        try:
+            experiment_exists = arize_client.get_experiment(
+                experiment_name=experiment_name,
+                dataset_name=dataset_name,
+            )
+        except Exception as e:
+            raise HandlerError(
+                f"Failed to check if experiment '{experiment_name}' exists",
+                details={"error": str(e)}
+            )
 
-            # If the experiment already exists, raise an error
-            if experiment_exists is not None:
-                logger.error(f"Experiment '{experiment_name}' already exists")
-                raise HandlerError(f"Experiment '{experiment_name}' already exists")
+        # If the experiment already exists, raise an error
+        if experiment_exists is not None:
+            raise ConfigurationError(
+                f"Experiment '{experiment_name}' already exists",
+                details={
+                    "experiment_name": experiment_name,
+                    "dataset_name": dataset_name
+                }
+            )
 
-            # Create task callable
-            task = self._create_task(task_name)
+        # Create task callable
+        task = self._create_task(task_name)
 
-            # Make sure evaluators are provided
-            if len(evaluator_names) <= 0:
-                raise HandlerError("No evaluators provided")
+        # Make sure evaluators are provided
+        if len(evaluator_names) <= 0:
+            raise HandlerError("No evaluators provided")
 
-            # Create evaluator callables
-            evaluators = self._create_evaluators(evaluator_names)
+        # Create evaluator callables
+        evaluators = self._create_evaluators(evaluator_names)
 
-            # Run experiment
-            logger.info(f"Running experiment: {experiment_name}")
+        # Run experiment
+        logger.info(f"Running experiment: {experiment_name}")
+        try:
             result = arize_client.run_experiment(
                 experiment_name=experiment_name,
                 dataset_name=dataset_name,
                 task=task,
                 evaluators=evaluators,
             )
-
-            # Print the result of the experiment
-            logger.debug(f"Experiment result: {result}")
-            if hasattr(result, "success"):
-                if result.success:
-                    click.secho(f"\nSuccessfully ran experiment '{experiment_name}'", fg="green")
-                else:
-                    click.secho(
-                        f"\nExperiment '{experiment_name}' failed: {result.error}", fg="red"
-                    )
-            else:
-                # Handle raw Arize API result
-                click.secho(
-                    f"\nExperiment '{experiment_name}' completed. Result: {result}", fg="green"
-                )
-
         except Exception as e:
-            raise HandlerError(f"Unexpected error: {str(e)}")
+            raise HandlerError(
+                f"Failed to run experiment '{experiment_name}'",
+                details={
+                    "experiment_name": experiment_name,
+                    "dataset_name": dataset_name,
+                    "error": str(e)
+                }
+            )
+
+        # Print the result of the experiment
+        logger.debug(f"Experiment result: {result}")
+        if hasattr(result, "success"):
+            if result.success:
+                click.secho(f"\nSuccessfully ran experiment '{experiment_name}'", fg="green")
+            else:
+                click.secho(
+                    f"\nExperiment '{experiment_name}' failed: {result.error}", fg="red"
+                )
+        else:
+            # Handle raw Arize API result
+            click.secho(
+                f"\nExperiment '{experiment_name}' completed. Result: {result}", fg="green"
+            )
+
 
     def _get_arize_api_key(self) -> str:
         """Get the Arize API key.
@@ -207,7 +229,7 @@ class Handler:
                 key, value = tag.split("=", 1)
                 tags[key.strip()] = value.strip()
             except ValueError:
-                raise HandlerError(f"Invalid tag format: {tag}. Use key=value format.")
+                raise ConfigurationError(f"Invalid tag format: {tag}. Use key=value format.")
 
         return tags
 
@@ -234,7 +256,7 @@ class Handler:
 
     def _create_execute_agent_task(
         self,
-    ):
+    ) -> ExecuteAgentTask:
         """Create an execute agent task.
 
         Returns:
@@ -278,31 +300,24 @@ class Handler:
         self,
     ) -> SentimentClassificationTask:
         """Create a sentiment classification task instance.
-        """
-        pass
-
-    def _create_execute_agent_task(
-        self,
-        name: str,
-    ) -> ExecuteAgentTask:
-        """Create a task instance.
-
-        Args:
-            name: Name of the task
 
         Returns:
-            Task instance
+            SentimentClassificationTask instance
 
         Raises:
             HandlerError: If the task cannot be created
         """
-        if name == "execute_agent":
-            return ExecuteAgentTask()
-        elif name == "sentiment_classification":
-            return SentimentClassificationTask()
-        else:
-            raise HandlerError(f"Unknown task: {name}")
-        
+        try:
+            api_key = self._get_required_env("OPENAI_API_KEY")
+            return SentimentClassificationTask(
+                api_key=api_key,
+                model="gpt-4o-mini",
+            )
+        except Exception as e:
+            raise HandlerError(
+                f"Failed to create sentiment classification task: {str(e)}"
+            )
+
     def _create_evaluators(
         self, names: Optional[List[str]]
     ) -> List[BaseEvaluator]:
@@ -329,7 +344,7 @@ class Handler:
             elif name == "execute_agent":
                 evaluator = self._create_execute_agent_evaluator()
             else:
-                raise HandlerError(f"Unknown evaluator: {name}")
+                raise ConfigurationError(f"Unknown evaluator: {name}")
             evaluators.append(evaluator)
 
         return evaluators
@@ -344,7 +359,7 @@ class Handler:
             Value of the environment variable
 
         Raises:
-            HandlerError: If the variable is not set
+            ConfigurationError: If the variable is not set
         """
         value = os.getenv(name)
 
@@ -355,7 +370,6 @@ class Handler:
                 f"Please set it in your .env file:\n"
                 f"{name}=your_value_here"
             )
-            logger.error(error_msg)
-            raise HandlerError(error_msg)
+            raise ConfigurationError(error_msg)
 
         return value

@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from arize_experiment.core.errors import TaskError
 
 @dataclass
 class TaskResult:
@@ -68,8 +69,11 @@ class Task(ABC):
 
         Returns:
             The task output (unwrapped from TaskResult)
+
+        Raises:
+            TaskError: If the task fails to execute
         """
         result = self.execute(input)
         if result.error:
-            raise RuntimeError(result.error)
+            raise TaskError(result.error)
         return result.output

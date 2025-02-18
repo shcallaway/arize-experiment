@@ -6,20 +6,9 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional
 from arize.experimental.datasets import ArizeDatasetsClient
+from arize_experiment.core.errors import ArizeClientError
 
 logger = logging.getLogger(__name__)
-
-
-class ArizeClientError(Exception):
-    """Base exception for Arize client errors."""
-
-    pass
-
-
-class ArizeClientApiError(ArizeClientError):
-    """Raised when there are issues with API calls."""
-
-    pass
 
 
 @dataclass
@@ -54,9 +43,10 @@ class ArizeClient:
         """Initialize the client with configuration.
 
         Args:
-            api_key: API key
-            developer_key: Developer key
-            config: Configuration
+            config: Configuration object containing API credentials
+
+        Raises:
+            ArizeClientError: If client initialization fails
         """
         self._space_id = config.space_id
 
@@ -73,7 +63,18 @@ class ArizeClient:
         api_key: str,
         developer_key: str,
     ) -> ArizeDatasetsClient:
-        """Create the Arize datasets client."""
+        """Create the Arize datasets client.
+        
+        Args:
+            api_key: Arize API key
+            developer_key: Arize developer key
+            
+        Returns:
+            Initialized ArizeDatasetsClient
+            
+        Raises:
+            ArizeClientError: If client creation fails
+        """
         try:
             logger.debug("Creating Arize datasets client")
             return ArizeDatasetsClient(
@@ -81,9 +82,10 @@ class ArizeClient:
                 developer_key=developer_key,
             )
         except Exception as e:
-            error_msg = f"Failed to create Arize datasets client: {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            raise ArizeClientError(error_msg) from e
+            raise ArizeClientError(
+                "Failed to create Arize datasets client",
+                details={"error": str(e)}
+            )
 
     def get_dataset(self, dataset_name: str) -> Any:
         """Get a dataset by name.
@@ -92,10 +94,10 @@ class ArizeClient:
             dataset_name: Name of the dataset
 
         Returns:
-            Dataset information
+            Dataset information or None if not found
 
         Raises:
-            ArizeClientApiError: If the API call fails
+            ArizeClientError: If dataset retrieval fails
         """
         try:
             logger.debug(f"Getting dataset: {dataset_name}")
@@ -103,12 +105,14 @@ class ArizeClient:
                 space_id=self._space_id, dataset_name=dataset_name
             )
         except Exception as e:
-            # If the dataset does not exist, return None
-            if ("Failed to get dataset") in str(e):
+            error_msg = str(e).lower()
+            if "not found" in error_msg or "does not exist" in error_msg:
                 return None
-
-            # Let other errors propagate up
-            raise
+                
+            raise ArizeClientError(
+                f"Error retrieving dataset '{dataset_name}'",
+                details={"dataset_name": dataset_name, "error": str(e)}
+            )
 
     def run_experiment(
         self,
@@ -124,13 +128,12 @@ class ArizeClient:
             dataset_name: Name of the dataset to use
             task: Task function to execute
             evaluators: Optional list of evaluator functions
-            space_id: Optional space ID (uses config default if not provided)
 
         Returns:
             Experiment results
 
         Raises:
-            ArizeClientApiError: If the API call fails
+            ArizeClientError: If experiment execution fails
         """
         try:
             logger.debug(
@@ -147,10 +150,16 @@ class ArizeClient:
         except Exception as e:
             error_msg = (
                 f"Failed to run experiment '{experiment_name}' "
-                f"on dataset '{dataset_name}': {str(e)}"
+                f"on dataset '{dataset_name}'"
             )
-            logger.error(error_msg, exc_info=True)
-            raise ArizeClientApiError(error_msg) from e
+            raise ArizeClientError(
+                error_msg,
+                details={
+                    "experiment_name": experiment_name,
+                    "dataset_name": dataset_name,
+                    "error": str(e)
+                }
+            )
 
     def get_experiment(
         self,
@@ -164,10 +173,10 @@ class ArizeClient:
             dataset_name: Name of the dataset
 
         Returns:
-            Experiment information
+            Experiment information or None if not found
 
         Raises:
-            ArizeClientApiError: If the API call fails
+            ArizeClientError: If experiment retrieval fails
         """
         try:
             logger.debug(
@@ -180,9 +189,30 @@ class ArizeClient:
                 dataset_name=dataset_name,
             )
         except Exception as e:
-            # If the experiment does not exist, return None
-            if ("Failed to get experiment") in str(e):
-                return None
-
-            # Let other errors propagate up
-            raise
+            return None
+            # # Check if this is a "not found" error from the original exception
+            # # Look for both the Arrow error and the wrapped RuntimeError
+            # error_str = str(e)
+            # if (
+            #     "Flight returned not found error" in error_str
+            #     or "experiment does not exist" in error_str
+            #     or (
+            #         hasattr(e, "__cause__") 
+            #         and e.__cause__ is not None 
+            #         and (
+            #             "Flight returned not found error" in str(e.__cause__)
+            #             or "experiment does not exist" in str(e.__cause__)
+            #         )
+            #     )
+            # ):
+            #     return None
+                
+            # # If the error was something other than a "not found" error, re-raise
+            # raise ArizeClientError(
+            #     f"Error retrieving experiment '{experiment_name}'",
+            #     details={
+            #         "experiment_name": experiment_name,
+            #         "dataset_name": dataset_name,
+            #         "error": str(e)
+            #     }
+            # )

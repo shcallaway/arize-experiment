@@ -6,13 +6,11 @@ import logging
 import os
 import sys
 from typing import Optional, Tuple
-
 import click
-
 from arize_experiment.cli.handler import Handler
+from arize_experiment.core.errors import pretty_print_error
 
 logger = logging.getLogger(__name__)
-
 
 @click.group()
 def cli():
@@ -48,19 +46,26 @@ def cli():
     "--task",
     "-t",
     required=True,
+    type=click.Choice([
+        "sentiment_classification",
+        "execute_agent",
+    ]),
     help="Name of the task to use",
-)
-@click.option(
-    "--tag",
-    "-t",
-    multiple=True,
-    help="Optional tags in key=value format (can be used multiple times)",
 )
 @click.option(
     "--evaluator",
     "-e",
     multiple=True,
+    required=True,
+    type=click.Choice([
+        "sentiment_classification_accuracy",
+    ]),
     help="Name of an evaluator to use (can be used multiple times)",
+)
+@click.option(
+    "--tag",
+    multiple=True,
+    help="Optional tags in key=value format (can be used multiple times)",
 )
 def run(
     name: str,
@@ -75,10 +80,20 @@ def run(
     using the specified dataset.
 
     Example:
-        $ arize-experiment run --name my-experiment --dataset my-dataset
+        $ arize-experiment run \
+            --name my-experiment \
+            --dataset my-dataset \
+            --task sentiment_classification \
+            --evaluator sentiment_classification_accuracy
 
     Tags can be added using the --tag option multiple times:
-        $ arize-experiment run -n exp-1 -d data-1 -t type=test -t env=prod
+        $ arize-experiment run \
+            -n exp-1 \
+            -d data-1 \
+            -t sentiment_classification \
+            -e sentiment_classification_accuracy \
+            -tag type=test \
+            -tag env=prod
 
     Available tasks:
         sentiment_classification: Classifies the sentiment of a text
@@ -87,7 +102,6 @@ def run(
     Available evaluators:
         sentiment_classification_accuracy: Evaluates whether the sentiment
             classification is accurate
-        execute_agent: Executes an agent by calling a web server
     """
     try:
         logger.info("Running experiment")
@@ -104,8 +118,8 @@ def run(
             evaluator_names=list(evaluator) if evaluator else None,
         )
     except Exception as e:
-        logger.error("Unexpected error", exc_info=True)
-        click.secho(f"\nUnexpected error: {str(e)}", fg="red", err=True)
+        error_msg = pretty_print_error(e)
+        click.secho(f"\nError: {error_msg}", fg="red", err=True)
         sys.exit(1)
 
 
