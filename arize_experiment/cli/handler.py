@@ -86,8 +86,9 @@ class Handler:
             except Exception as e:
                 raise HandlerError(f"Failed to initialize Arize client: {str(e)}")
 
-            # Get dataset name from CLI, env, or generate a random name
-            dataset = dataset if dataset is not None else self._get_dataset()
+            # Get dataset name from CLI flag or env
+            if not dataset:
+                dataset = self._get_required_env("DATASET")
             logger.info(f"Using dataset: {dataset}")
 
             # Parse tags
@@ -95,23 +96,23 @@ class Handler:
             if parsed_tags:
                 logger.info(f"Using tags: {parsed_tags}")
 
-            # Check if dataset does not exist
-            logger.info(f"Checking if dataset '{dataset}' does not exist")
+            # Make sure dataset exists
+            logger.info(f"Checking if dataset '{dataset}' exists")
             try:
                 dataset_exists = arize_client.get_dataset(
                     dataset=dataset,
                 )
             except Exception as e:
                 raise HandlerError(
-                    f"Failed to check if dataset '{dataset}' already exists: {str(e)}"
+                    f"Failed to check if dataset '{dataset}' exists: {str(e)}"
                 )
 
             # If the dataset does not exist (DataFrame is empty), raise an error
             if dataset_exists is None:
                 raise HandlerError(f"Dataset '{dataset}' does not exist")
 
-            # Check if experiment already exists
-            logger.info(f"Checking if experiment '{name}' already exists")
+            # Make sure experiment DOES NOT exist
+            logger.info(f"Checking if experiment '{name}' exists")
             try:
                 experiment_exists = arize_client.get_experiment(
                     experiment=name,
@@ -119,7 +120,7 @@ class Handler:
                 )
             except Exception as e:
                 raise HandlerError(
-                    f"Failed to check if experiment '{name}' already exists: {str(e)}"
+                    f"Failed to check if experiment '{name}' exists: {str(e)}"
                 )
 
             # If the experiment already exists, raise an error
@@ -185,19 +186,19 @@ class Handler:
         """
         return self._get_required_env("ARIZE_DEVELOPER_KEY")
 
-    def _get_dataset(self) -> str:
-        """Get the dataset name.
+    # def _get_dataset(self) -> str:
+    #     """Get the dataset name.
 
-        Returns:
-            Dataset name
-        """
-        dataset = os.getenv("DATASET")
+    #     Returns:
+    #         Dataset name
+    #     """
+    #     dataset = os.getenv("DATASET")
 
-        # If the dataset is not set, generate a random dataset name
-        if dataset is None:
-            return f"dataset_{os.urandom(4).hex()}"
+    #     # If the dataset is not set, generate a random dataset name
+    #     if dataset is None:
+    #         return f"dataset_{os.urandom(4).hex()}"
 
-        return dataset
+    #     return dataset
 
     def _parse_tags(self, tag_list: Optional[List[str]]) -> Optional[Dict[str, str]]:
         """Parse tag strings into a dictionary.
