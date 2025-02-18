@@ -3,7 +3,7 @@ from arize_experiment.core.task import TaskResult
 from arize_experiment.core.errors import TaskError
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
-
+from typing import Dict, Any
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,11 +37,11 @@ class SentimentClassificationTask(Task):
         """Get the task name."""
         return "sentiment_classification"
 
-    def execute(self, Input: str) -> TaskResult:
+    def execute(self, Input: Dict[str, Any]) -> TaskResult:
         """Execute sentiment classification on input text.
 
         Args:
-            Input: Single text string
+            Input: A dictionary containing the input text to classify.
 
         Returns:
             TaskResult containing:
@@ -55,7 +55,13 @@ class SentimentClassificationTask(Task):
 
             messages = [
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": Input["input"]},
+                {
+                    "role": "user",
+                    # Get the actual input text from off the input dict.
+                    # This is necessary b/c the input param is actually a dict,
+                    # and the input text is nested inside that dict.
+                    "content": Input["input"]
+                },
             ]
 
             response: ChatCompletion = self._client.chat.completions.create(
@@ -66,7 +72,7 @@ class SentimentClassificationTask(Task):
 
             logger.info(f"OpenAI chat completion request successful")
 
-            sentiment = self._parse_output(response.choices[0].message.content)
+            sentiment = self._parse_llm_output(response.choices[0].message.content)
 
             # Ensure we only get valid labels
             if sentiment not in ["positive", "negative", "neutral"]:
@@ -76,15 +82,14 @@ class SentimentClassificationTask(Task):
             logger.info(f"Finishing sentiment classification task")
 
             return TaskResult(
-                output=sentiment,
-                # # We have to thread the original input text through to
-                # # the evaluator by passing it in the output dict. This is
-                # # not ideal, but I couldn't find another way to get it to
-                # # the evaluator... This is a hacky workaround.
-                # output={
-                #     "input": Input,
-                #     "output": sentiment,
-                # },
+                # We have to thread the original input text through to
+                # the evaluator by passing it in the output dict. This is
+                # not ideal, but I couldn't find another way to get it to
+                # the evaluator... This is a hacky workaround.
+                output={
+                    "input": Input,
+                    "output": sentiment,
+                },
                 metadata={
                     "model": self._model,
                 },
@@ -96,7 +101,7 @@ class SentimentClassificationTask(Task):
                 error=f"Sentiment classification failed: {str(e)}",
             )
 
-    def _parse_output(
+    def _parse_llm_output(
         self,
         text: str,
     ) -> str:
@@ -108,7 +113,6 @@ class SentimentClassificationTask(Task):
         Returns:
             Classification result
         """
-        logger.info(f"Parsing OpenAI output: {text}")
         try:
             return text.strip().lower()
         except Exception as e:

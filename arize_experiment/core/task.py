@@ -5,7 +5,6 @@ Core task interface and base implementation for arize-experiment.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-
 from arize_experiment.core.errors import TaskError
 
 @dataclass
@@ -42,7 +41,7 @@ class Task(ABC):
     @abstractmethod
     def execute(
         self,
-        Input: Any,
+        Input: Dict[str, Any],
     ) -> TaskResult:
         """Execute the task with the given input.
 
@@ -62,7 +61,7 @@ class Task(ABC):
         """Get a string representation of the task."""
         return f"{self.__class__.__name__}(name={self.name})"
 
-    def __call__(self, Input: Any) -> Any:
+    def __call__(self, Input: Dict[str, Any]) -> Any:
         """Make the task callable by delegating to execute.
         
         This allows tasks to be used directly as functions.

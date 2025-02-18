@@ -86,12 +86,12 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         Raises:
             ValueError: If output format is invalid or API call fails
         """
-        # # Get the original input text and the task output.
-        # # We have to do this b/c I couldn't find another way to access
-        # # the original input text from within the evaluator...
-        # # so we are threading the input through the output dict.
-        # input = output["input"]
-        # output = output["output"]
+        # Get the original input text and the task output.
+        # We have to do this b/c I couldn't find another way to access
+        # the original input text from within the evaluator...
+        # so we are threading the input through the output dict.
+        input = output["input"]
+        output = output["output"]
 
         try:
             messages = [
@@ -102,9 +102,8 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 {
                     "role": "user",
                     "content": (
+                        f"Input: {input}\n"
                         f"Classification: {output}"
-                        # f"Input: {input}\n"
-                        # f"Classification: {output}"
                     ),
                 },
             ]
