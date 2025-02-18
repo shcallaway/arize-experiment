@@ -1,4 +1,3 @@
-from typing import Optional
 from arize_experiment.core.task import Task
 from arize_experiment.core.task import TaskResult
 
@@ -6,7 +5,8 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
 SYSTEM_PROMPT = """
-You are a sentiment analyzer. Classify the following text as either 'positive', 'negative', or 'neutral'. Respond with just one word.
+You are a sentiment analyzer. Classify the following text as either 'positive','negative',
+or 'neutral'. Respond with just one word.
 """
 
 

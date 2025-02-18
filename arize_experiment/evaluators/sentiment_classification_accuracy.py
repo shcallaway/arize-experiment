@@ -13,25 +13,22 @@ from arize_experiment.core.evaluator import BaseEvaluator, EvaluationResult
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = """
-You are a sentiment analysis accuracy checker.
-
-You will be given an input text and a classification. You must decide whether the classification is accurate.
-
-Consider:
-1. The overall tone and emotion of the text
-2. The presence of positive/negative indicators
-3. The context and nuance of the message
-
-Respond with either "correct" or "incorrect", followed by a brief explanation.
-"""
+SYSTEM_PROMPT = (
+    "You will be given an input text and a classification. You must decide whether "
+    "the classification is accurate.\n\n"
+    "Consider:\n"
+    "1. The overall tone and emotion of the text\n"
+    "2. The presence of positive/negative indicators\n"
+    "3. The context and nuance of the message\n\n"
+    'Respond with either "correct" or "incorrect", followed by a brief explanation.'
+)
 
 
 class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
     """Evaluates the accuracy of sentiment classifications using OpenAI's API.
 
-    This evaluator uses GPT-4o-mini to analyze whether a given sentiment classification
-    (positive, neutral, negative) is appropriate for a given input text.
+    This evaluator uses GPT-4o-mini to analyze whether a given sentiment
+    classification (positive, neutral, negative) is appropriate for input text.
     """
 
     def __init__(
@@ -68,7 +65,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         try:
             text = text.strip().lower()
             correct = text.startswith("correct")
-            explanation = text[text.find(" ") :].strip()
+            explanation = text[text.find(" "):].strip()
             return correct, explanation
         except Exception as e:
             raise ValueError(f"Failed to parse LLM output: {str(e)}")
@@ -96,8 +93,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         required_keys = {"input", "classification"}
         if not all(key in output for key in required_keys):
             raise ValueError(
-                f"Output dict must contain keys {required_keys}, "
-                f"got {set(output.keys())}"
+                f"Output dict must contain keys {required_keys}, got {set(output.keys())}"
             )
 
         try:
@@ -108,7 +104,10 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 },
                 {
                     "role": "user",
-                    "content": f"Input: {output['input']}\nClassification: {output['classification']}",
+                    "content": (
+                        f"Input: {output['input']}\n"
+                        f"Classification: {output['classification']}"
+                    ),
                 },
             ]
 
