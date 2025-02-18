@@ -45,10 +45,6 @@ def cli():
     help="Name of the dataset to use (uses DATASET from .env if not provided)",
 )
 @click.option(
-    "--description",
-    help="Optional description of the experiment",
-)
-@click.option(
     "--tag",
     "-t",
     multiple=True,

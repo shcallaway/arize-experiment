@@ -142,7 +142,6 @@ class ArizeClient:
                 experiment_name=experiment,
             )
         except Exception as e:
-            # Wrap other errors in ArizeClientApiError
             error_msg = (
                 f"Failed to run experiment '{experiment}' "
                 f"on dataset '{dataset}': {str(e)}"
