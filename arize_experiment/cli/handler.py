@@ -86,8 +86,8 @@ class Handler:
             except Exception as e:
                 raise HandlerError(f"Failed to initialize Arize client: {str(e)}")
 
-            # Get dataset name
-            dataset = self._get_dataset()
+            # Get dataset name from CLI, env, or generate a random name
+            dataset = dataset if dataset is not None else self._get_dataset()
             logger.info(f"Using dataset: {dataset}")
 
             # Parse tags
@@ -107,7 +107,7 @@ class Handler:
                 )
 
             # If the dataset does not exist (DataFrame is empty), raise an error
-            if dataset_exists.empty:
+            if dataset_exists is None:
                 raise HandlerError(f"Dataset '{dataset}' does not exist")
 
             # Check if experiment already exists
@@ -124,6 +124,7 @@ class Handler:
 
             # If the experiment already exists, raise an error
             if experiment_exists is not None:
+                logger.error(f"Experiment '{name}' already exists")
                 raise HandlerError(f"Experiment '{name}' already exists")
 
             # Create evaluator instances

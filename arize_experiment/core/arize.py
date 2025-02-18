@@ -103,9 +103,12 @@ class ArizeClient:
                 space_id=self._space_id, dataset_name=dataset
             )
         except Exception as e:
-            error_msg = f"Failed to get dataset '{dataset}': {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            raise ArizeClientApiError(error_msg) from e
+            # If the dataset does not exist, return None
+            if ("Failed to get dataset") in str(e):
+                return None
+
+            # Let other errors propagate up
+            raise
 
     def run_experiment(
         self,

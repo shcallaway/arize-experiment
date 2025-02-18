@@ -57,3 +57,19 @@ class Task(ABC):
     def __str__(self) -> str:
         """Get a string representation of the task."""
         return f"{self.__class__.__name__}(name={self.name})"
+
+    def __call__(self, input: Any) -> Any:
+        """Make the task callable by delegating to execute.
+        
+        This allows tasks to be used directly as functions.
+
+        Args:
+            input: The input data for the task
+
+        Returns:
+            The task output (unwrapped from TaskResult)
+        """
+        result = self.execute(input)
+        if result.error:
+            raise RuntimeError(result.error)
+        return result.output
