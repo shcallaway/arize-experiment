@@ -132,7 +132,7 @@ class Handler:
             evaluators = self._create_evaluators(evaluators)
 
             # Set the task to "sentiment_classification"
-            # TODO(Sherwood): Make this configurable
+            # TODO(Sherwood): Make this configurable via a --task flag
             task = SentimentClassificationTask()
 
             # Run experiment
@@ -186,20 +186,6 @@ class Handler:
         """
         return self._get_required_env("ARIZE_DEVELOPER_KEY")
 
-    # def _get_dataset(self) -> str:
-    #     """Get the dataset name.
-
-    #     Returns:
-    #         Dataset name
-    #     """
-    #     dataset = os.getenv("DATASET")
-
-    #     # If the dataset is not set, generate a random dataset name
-    #     if dataset is None:
-    #         return f"dataset_{os.urandom(4).hex()}"
-
-    #     return dataset
-
     def _parse_tags(self, tag_list: Optional[List[str]]) -> Optional[Dict[str, str]]:
         """Parse tag strings into a dictionary.
 
@@ -243,6 +229,25 @@ class Handler:
                 f"Failed to create sentiment classification accuracy evaluator: {str(e)}"
             )
 
+    def _create_execute_agent_evaluator(
+        self,
+    ):
+        """Create an execute agent evaluator.
+
+        Returns:
+            ExecuteAgentEvaluator instance
+        """
+        pass
+        # try:
+        #     api_key = self._get_required_env("OPENAI_API_KEY")
+        #     return ExecuteAgentEvaluator(
+        #         api_key=api_key,
+        #     )
+        # except Exception as e:
+        #     raise HandlerError(
+        #         f"Failed to create execute agent evaluator: {str(e)}"
+        #     )
+        
     def _create_evaluators(
         self, evaluator_names: Optional[List[str]]
     ) -> List[BaseEvaluator]:
@@ -266,6 +271,8 @@ class Handler:
         for name in evaluator_names:
             if name == "sentiment_classification_accuracy":
                 evaluator = self._create_sentiment_classification_accuracy_evaluator()
+            elif name == "execute_agent":
+                evaluator = self._create_execute_agent_evaluator()
             else:
                 raise HandlerError(f"Unknown evaluator: {name}")
 

@@ -74,8 +74,9 @@ def run(
         $ arize-experiment run -n exp-1 -d data-1 -t type=test -t env=prod
 
     Available evaluators:
-        sentiment: Evaluates text sentiment (positive/neutral/negative)
-        numeric: Checks if values are numeric
+        sentiment_classification_accuracy: Evaluates whether the sentiment
+            classification is accurate
+        execute_agent: Executes an agent by calling a web server
     """
     try:
         logger.info("Running experiment")
