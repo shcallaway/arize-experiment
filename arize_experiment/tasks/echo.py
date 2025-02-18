@@ -26,11 +26,11 @@ class EchoTask(Task):
         """Get the task name."""
         return "echo"
 
-    def execute(self, input: Any) -> TaskResult:
+    def execute(self, Input: Any) -> TaskResult:
         """Execute the echo task.
 
         Args:
-            input: Any input data
+            Input: Any input data
 
         Returns:
             TaskResult containing:
@@ -38,4 +38,4 @@ class EchoTask(Task):
             - Optional metadata about the input type
             - No error (this task cannot fail)
         """
-        return TaskResult(output=input, metadata={})
+        return TaskResult(output=Input, metadata={})

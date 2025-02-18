@@ -9,6 +9,7 @@ from typing import Optional, Tuple
 import click
 from arize_experiment.cli.handler import Handler
 from arize_experiment.core.errors import pretty_print_error
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,16 @@ def cli():
     to create and run experiments. Use the --help flag with any command
     for more information.
     """
+    # Load environment variables
+    try:
+        load_dotenv()
+    except Exception as e:
+        error_msg = pretty_print_error(e)
+        click.secho(f"\nError: {error_msg}", fg="red", err=True)
+        sys.exit(1)
+
     # Initialize logging
-    log_level = os.getenv("LOGLEVEL", "INFO").upper()
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
     logging.basicConfig(
         level=getattr(logging, log_level),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

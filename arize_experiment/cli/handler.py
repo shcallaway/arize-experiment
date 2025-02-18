@@ -17,9 +17,7 @@ from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
 from arize_experiment.core.errors import (
     ConfigurationError,
     HandlerError,
-    pretty_print_error,
 )
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +34,7 @@ class Handler:
 
     def __init__(self):
         """Initialize the command handler."""
-        self._load_env()
-
-    def _load_env(self) -> None:
-        """Load environment variables from .env file."""
-        try:
-            load_dotenv()
-            logger.debug("Environment variables loaded from .env file")
-        except Exception as e:
-            logger.warning(f"Failed to load .env file: {str(e)}")
+        pass
 
     def run(
         self,

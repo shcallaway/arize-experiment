@@ -3,12 +3,13 @@ Evaluator for judging the accuracy of sentiment classifications using OpenAI's A
 """
 
 import logging
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
-from arize_experiment.core.evaluator import BaseEvaluator, EvaluatorResult
+from arize_experiment.core.evaluator import BaseEvaluator
+from arize.experimental.datasets.experiments.types import EvaluationResult
 
 logger = logging.getLogger(__name__)
 
@@ -70,16 +71,14 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         except Exception as e:
             raise ValueError(f"Failed to parse LLM output: {str(e)}")
 
-    def evaluate(self, output: Any) -> EvaluatorResult:
+    def evaluate(self, output: str) -> EvaluationResult:
         """Evaluate whether the sentiment classification is accurate.
 
         Args:
-            output: Dict containing:
-                - input: The original text being classified
-                - classification: The sentiment classification (positive/neutral/negative)
+            output: The sentiment classification (positive/neutral/negative)
 
         Returns:
-            EvaluationResult with:
+            EvaluationResult containing:
             - score: 1.0 if correct, 0.0 if incorrect
             - label: "correct" or "incorrect"
             - explanation: Detailed explanation of the accuracy assessment
@@ -87,14 +86,12 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         Raises:
             ValueError: If output format is invalid or API call fails
         """
-        if not isinstance(output, dict):
-            raise ValueError(f"Expected dict output, got {type(output)}")
-
-        required_keys = {"input", "classification"}
-        if not all(key in output for key in required_keys):
-            raise ValueError(
-                f"Output dict must contain keys {required_keys}, got {set(output.keys())}"
-            )
+        # # Get the original input text and the task output.
+        # # We have to do this b/c I couldn't find another way to access
+        # # the original input text from within the evaluator...
+        # # so we are threading the input through the output dict.
+        # input = output["input"]
+        # output = output["output"]
 
         try:
             messages = [
@@ -105,8 +102,9 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 {
                     "role": "user",
                     "content": (
-                        f"Input: {output['input']}\n"
-                        f"Classification: {output['classification']}"
+                        f"Classification: {output}"
+                        # f"Input: {input}\n"
+                        # f"Classification: {output}"
                     ),
                 },
             ]
@@ -117,14 +115,14 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 temperature=self._temperature,
             )
 
-            # Parse response
-            correct, explanation = self._parse_output(
-                response.choices[0].message.content
-            )
+            correct, explanation = self._parse_output(response.choices[0].message.content)
 
-            return EvaluatorResult(
-                score=1.0 if correct else 0.0,
-                label="correct" if correct else "incorrect",
+            label = "correct" if correct else "incorrect"
+            score = 1.0 if correct else 0.0
+
+            return EvaluationResult(
+                score=score,
+                label=label,
                 explanation=explanation,
             )
         except Exception as e:

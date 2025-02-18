@@ -14,11 +14,11 @@ class ExecuteAgentTask(Task):
         """Get the task name."""
         return "execute_agent"
 
-    def execute(self, input: str) -> TaskResult:
+    def execute(self, Input: str) -> TaskResult:
         """Execute the agent on input text.
 
         Args:
-            input: Single text string
+            Input: Single text string
 
         Returns:
             TaskResult containing:

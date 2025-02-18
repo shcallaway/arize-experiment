@@ -3,26 +3,9 @@ Core evaluator interface and result types for arize-experiment.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
-from arize_experiment.core.errors import EvaluatorError
-
-@dataclass
-class EvaluatorResult:
-    """Standardized result type for all evaluators."""
-
-    score: float  # Normalized score between 0 and 1
-    label: str  # Classification label
-    explanation: Optional[str] = None  # Optional explanation of the result
-
-    def __post_init__(self):
-        """Validate the evaluation result."""
-        if not 0 <= self.score <= 1:
-            raise EvaluatorError(f"Score must be between 0 and 1, got {self.score}")
-        if not self.label:
-            raise EvaluatorError("Label cannot be empty")
-
+from arize.experimental.datasets.experiments.types import EvaluationResult
 
 class BaseEvaluator(ABC):
     """Base class for all evaluators.
@@ -42,7 +25,7 @@ class BaseEvaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, output: Any) -> EvaluatorResult:
+    def evaluate(self, output: Any) -> EvaluationResult:
         """Evaluate the given output and return a standardized result.
 
         Args:
@@ -50,10 +33,20 @@ class BaseEvaluator(ABC):
                    should document their expected input types.
 
         Returns:
-            EvaluatorResult containing the normalized score, label, and optional
-            explanation.
+            EvaluationResult containing:
+            - score: Normalized score between 0 and 1
+            - label: Classification label
+            - explanation: Optional explanation of the result
 
         Raises:
             EvaluatorError: If the evaluator fails to evaluate the output
+        """
+        pass
+
+    @abstractmethod
+    def __call__(self, output: Any) -> Any:
+        """Make the evaluator callable by delegating to evaluate.
+
+        This allows evaluators to be used directly as functions.
         """
         pass

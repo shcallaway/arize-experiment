@@ -40,11 +40,14 @@ class Task(ABC):
         pass
 
     @abstractmethod
-    def execute(self, input: Any) -> TaskResult:
+    def execute(
+        self,
+        Input: Any,
+    ) -> TaskResult:
         """Execute the task with the given input.
 
         Args:
-            input: The input data for the task. Tasks should document
+            Input: The input data for the task. Tasks should document
                   their expected input types.
 
         Returns:
@@ -59,13 +62,13 @@ class Task(ABC):
         """Get a string representation of the task."""
         return f"{self.__class__.__name__}(name={self.name})"
 
-    def __call__(self, input: Any) -> Any:
+    def __call__(self, Input: Any) -> Any:
         """Make the task callable by delegating to execute.
         
         This allows tasks to be used directly as functions.
 
         Args:
-            input: The input data for the task
+            Input: The input data for the task
 
         Returns:
             The task output (unwrapped from TaskResult)
@@ -73,7 +76,8 @@ class Task(ABC):
         Raises:
             TaskError: If the task fails to execute
         """
-        result = self.execute(input)
+        result = self.execute(Input)
         if result.error:
             raise TaskError(result.error)
+        # TODO: Change this so it returns the whole TaskResult object
         return result.output
