@@ -23,7 +23,7 @@ class TaskResult:
 
 class Task(ABC):
     """Base class for all tasks.
-    
+
     All tasks must inherit from this class and implement its abstract methods.
     This ensures consistent behavior and return types across all tasks.
     """
@@ -32,7 +32,7 @@ class Task(ABC):
     @abstractmethod
     def name(self) -> str:
         """Get the name of the task.
-        
+
         Returns:
             str: The unique name of this task
         """
@@ -41,14 +41,14 @@ class Task(ABC):
     @abstractmethod
     def execute(self, input: Any) -> TaskResult:
         """Execute the task with the given input.
-        
+
         Args:
             input: The input data for the task. Tasks should document
                   their expected input types.
-        
+
         Returns:
             TaskResult containing the output and optional metadata or error.
-        
+
         Raises:
             ValueError: If the input is not of the expected type or format
         """

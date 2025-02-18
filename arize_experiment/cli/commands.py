@@ -23,10 +23,10 @@ def cli():
     for more information.
     """
     # Initialize logging
-    log_level = os.getenv('LOGLEVEL', 'INFO').upper()
+    log_level = os.getenv("LOGLEVEL", "INFO").upper()
     logging.basicConfig(
         level=getattr(logging, log_level),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     logger.debug("CLI initialized with log level: %s", log_level)
 

@@ -9,6 +9,7 @@ SYSTEM_PROMPT = """
 You are a sentiment analyzer. Classify the following text as either 'positive', 'negative', or 'neutral'. Respond with just one word.
 """
 
+
 class SentimentClassificationTask(Task):
     def __init__(
         self,
@@ -17,7 +18,7 @@ class SentimentClassificationTask(Task):
         api_key: str = None,
     ):
         """Initialize the sentiment classification task.
-        
+
         Args:
             model: Name of the OpenAI model to use
             temperature: Temperature parameter for model inference
@@ -34,10 +35,10 @@ class SentimentClassificationTask(Task):
 
     def execute(self, input: str) -> TaskResult:
         """Execute sentiment classification on input text.
-        
+
         Args:
             input: Single text string
-            
+
         Returns:
             TaskResult containing:
                 output: Classification result ('positive', 'negative', or 'neutral')
@@ -46,14 +47,8 @@ class SentimentClassificationTask(Task):
         """
         try:
             messages = [
-                {
-                    "role": "system", 
-                    "content": SYSTEM_PROMPT
-                },
-                {
-                    "role": "user",
-                    "content": input
-                }
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": input},
             ]
 
             response: ChatCompletion = self._client.chat.completions.create(
@@ -67,28 +62,27 @@ class SentimentClassificationTask(Task):
             # Ensure we only get valid labels
             if sentiment not in ["positive", "negative", "neutral"]:
                 sentiment = "neutral"
-            
+
             return TaskResult(
                 output=sentiment,
                 metadata={
                     "model": self._model,
-                }
+                },
             )
         except Exception as e:
             return TaskResult(
-                output=None,
-                error=f"Sentiment classification failed: {str(e)}"
+                output=None, error=f"Sentiment classification failed: {str(e)}"
             )
-        
+
     def _parse_output(
         self,
         text: str,
     ) -> str:
         """Parse the output of the sentiment classification task.
-        
+
         Args:
             text: Raw LLM output text
-        
+
         Returns:
             Classification result
         """

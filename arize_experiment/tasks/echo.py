@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class EchoTask(Task):
     """Simple echo task that returns its input.
-    
+
     This is a basic example task that demonstrates the Task interface.
     It simply returns whatever input it receives.
     """
@@ -28,18 +28,14 @@ class EchoTask(Task):
 
     def execute(self, input: Any) -> TaskResult:
         """Execute the echo task.
-        
+
         Args:
             input: Any input data
-        
+
         Returns:
             TaskResult containing:
             - The input data as output
             - Optional metadata about the input type
             - No error (this task cannot fail)
         """
-        return TaskResult(
-            output=input,
-            metadata={}
-        )
-
+        return TaskResult(output=input, metadata={})

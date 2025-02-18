@@ -22,7 +22,7 @@ setup(
             "arize_experiment.services.*",
             "arize_experiment.infrastructure.*",
             "arize_experiment.cli.*",
-            "arize_experiment.evaluators.*"
+            "arize_experiment.evaluators.*",
         ]
     ),
     classifiers=[

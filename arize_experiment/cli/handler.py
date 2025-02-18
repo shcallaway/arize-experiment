@@ -8,20 +8,24 @@ from typing import Dict, List, Optional
 import click
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.tasks.sentiment_classification import SentimentClassificationTask
-from arize_experiment.evaluators.sentiment_classification_accuracy import SentimentClassificationAccuracyEvaluator
+from arize_experiment.evaluators.sentiment_classification_accuracy import (
+    SentimentClassificationAccuracyEvaluator,
+)
 from arize_experiment.core.arize import Arize
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
+
 class HandlerError(Exception):
     """Raised when command handling fails."""
+
     pass
 
 
 class Handler:
     """Handles CLI command execution.
-    
+
     This class coordinates between the CLI interface and the application's
     core services. It handles:
     1. Parameter validation and processing
@@ -49,13 +53,13 @@ class Handler:
         evaluators: Optional[List[str]] = None,
     ) -> None:
         """Handle the run experiment command.
-        
+
         Args:
             name: Name of the experiment
             dataset: Optional dataset name
             tags: Optional list of key=value tag strings
             evaluators: Optional list of evaluator names
-        
+
         Raises:
             HandlerError: If command execution fails
         """
@@ -97,7 +101,9 @@ class Handler:
                     dataset=dataset,
                 )
             except Exception as e:
-                raise HandlerError(f"Failed to check if experiment '{name}' already exists: {str(e)}")
+                raise HandlerError(
+                    f"Failed to check if experiment '{name}' already exists: {str(e)}"
+                )
 
             # If the experiment already exists, raise an error
             if existing is not None:
@@ -116,61 +122,56 @@ class Handler:
                 experiment=name,
                 dataset=dataset,
                 task=task,
-                evaluators=evaluators if evaluators else None
+                evaluators=evaluators if evaluators else None,
             )
 
             # Log the result for debugging
             logger.debug(f"Experiment result: {result}")
-            
+
             # Print the result of the experiment
-            if hasattr(result, 'success'):
+            if hasattr(result, "success"):
                 if result.success:
-                    click.secho(
-                        f"\nSuccessfully ran experiment '{name}'",
-                        fg="green"
-                    )
+                    click.secho(f"\nSuccessfully ran experiment '{name}'", fg="green")
                 else:
                     click.secho(
-                        f"\nExperiment '{name}' failed: {result.error}",
-                        fg="red"
+                        f"\nExperiment '{name}' failed: {result.error}", fg="red"
                     )
             else:
                 # Handle raw Arize API result
                 click.secho(
-                    f"\nExperiment '{name}' completed. Result: {result}",
-                    fg="green"
+                    f"\nExperiment '{name}' completed. Result: {result}", fg="green"
                 )
 
         except Exception as e:
             raise HandlerError(f"Unexpected error: {str(e)}")
-        
+
     def _get_arize_api_key(self) -> str:
         """Get the Arize API key.
-        
+
         Returns:
             Arize API key
         """
         return self._get_required_env("ARIZE_API_KEY")
-    
+
     def _get_arize_space_id(self) -> str:
         """Get the Arize space ID.
-        
+
         Returns:
             Arize space ID
         """
         return self._get_required_env("ARIZE_SPACE_ID")
-    
+
     def _get_arize_developer_key(self) -> str:
         """Get the Arize developer key.
-        
+
         Returns:
             Arize developer key
         """
         return self._get_required_env("ARIZE_DEVELOPER_KEY")
-        
+
     def _get_dataset(self) -> str:
         """Get the dataset name.
-        
+
         Returns:
             Dataset name
         """
@@ -179,18 +180,18 @@ class Handler:
         # If the dataset is not set, generate a random dataset name
         if dataset is None:
             return f"dataset_{os.urandom(4).hex()}"
-        
+
         return dataset
 
     def _parse_tags(self, tag_list: Optional[List[str]]) -> Optional[Dict[str, str]]:
         """Parse tag strings into a dictionary.
-        
+
         Args:
             tag_list: Optional list of key=value strings
-        
+
         Returns:
             Dictionary of parsed tags or None
-        
+
         Raises:
             HandlerError: If tag format is invalid
         """
@@ -203,17 +204,15 @@ class Handler:
                 key, value = tag.split("=", 1)
                 tags[key.strip()] = value.strip()
             except ValueError:
-                raise HandlerError(
-                    f"Invalid tag format: {tag}. Use key=value format."
-                )
+                raise HandlerError(f"Invalid tag format: {tag}. Use key=value format.")
 
         return tags
-    
+
     def _create_sentiment_classification_accuracy_evaluator(
         self,
     ) -> SentimentClassificationAccuracyEvaluator:
         """Create a sentiment classification accuracy evaluator.
-        
+
         Returns:
             SentimentClassificationAccuracyEvaluator instance
         """
@@ -223,20 +222,21 @@ class Handler:
                 api_key=api_key,
             )
         except Exception as e:
-            raise HandlerError(f"Failed to create sentiment classification accuracy evaluator: {str(e)}")
+            raise HandlerError(
+                f"Failed to create sentiment classification accuracy evaluator: {str(e)}"
+            )
 
-    
     def _create_evaluators(
         self, evaluator_names: Optional[List[str]]
     ) -> List[BaseEvaluator]:
         """Create evaluator instances from names.
-        
+
         Args:
             evaluator_names: Optional list of evaluator names
-        
+
         Returns:
             List of evaluator instances
-        
+
         Raises:
             HandlerError: If an evaluator cannot be created
         """
@@ -258,13 +258,13 @@ class Handler:
 
     def _get_required_env(self, name: str) -> str:
         """Get a required environment variable.
-        
+
         Args:
             name: Name of the environment variable
-        
+
         Returns:
             Value of the environment variable
-        
+
         Raises:
             HandlerError: If the variable is not set
         """
@@ -279,5 +279,5 @@ class Handler:
             )
             logger.error(error_msg)
             raise HandlerError(error_msg)
-        
+
         return value

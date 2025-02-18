@@ -25,7 +25,7 @@ class EvaluationResult:
 
 class BaseEvaluator(ABC):
     """Base class for all evaluators.
-    
+
     All evaluators must inherit from this class and implement its abstract methods.
     This ensures consistent behavior and return types across all evaluators.
     """
@@ -34,7 +34,7 @@ class BaseEvaluator(ABC):
     @abstractmethod
     def name(self) -> str:
         """Get the name of the evaluator.
-        
+
         Returns:
             str: The unique name of this evaluator
         """
@@ -43,15 +43,15 @@ class BaseEvaluator(ABC):
     @abstractmethod
     def evaluate(self, output: Any) -> EvaluationResult:
         """Evaluate the given output and return a standardized result.
-        
+
         Args:
             output: The output to evaluate. Can be any type, but evaluators
                    should document their expected input types.
-        
+
         Returns:
             EvaluationResult containing the normalized score, label, and optional
             explanation.
-        
+
         Raises:
             ValueError: If the output is not of the expected type or format
         """

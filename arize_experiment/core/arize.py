@@ -11,17 +11,19 @@ logger = logging.getLogger(__name__)
 
 class ArizeClientError(Exception):
     """Base exception for Arize client errors."""
+
     pass
 
 
 class ArizeClientApiError(ArizeClientError):
     """Raised when there are issues with API calls."""
+
     pass
 
 
 class Arize:
     """Enhanced Arize API client wrapper.
-    
+
     This class wraps the Arize datasets client with:
     1. Better error handling
     2. Retry logic for transient failures
@@ -36,14 +38,14 @@ class Arize:
         space_id: str,
     ):
         """Initialize the client with configuration.
-        
+
         Args:
             api_key: API key
             developer_key: Developer key
             space_id: Space ID
         """
         self._space_id = space_id
-        
+
         # Initialize the Arize datasets client
         self._client = self._create_client(
             api_key=api_key,
@@ -71,21 +73,20 @@ class Arize:
 
     def get_dataset(self, dataset: str) -> Any:
         """Get a dataset by name.
-        
+
         Args:
             dataset: Name of the dataset
-        
+
         Returns:
             Dataset information
-        
+
         Raises:
             ArizeClientApiError: If the API call fails
         """
         try:
             logger.debug(f"Getting dataset: {dataset}")
             return self._client.get_dataset(
-                space_id=self._space_id,
-                dataset_name=dataset
+                space_id=self._space_id, dataset_name=dataset
             )
         except Exception as e:
             error_msg = f"Failed to get dataset '{dataset}': {str(e)}"
@@ -100,17 +101,17 @@ class Arize:
         evaluators: Optional[List[Callable]] = None,
     ) -> Any:
         """Run an experiment.
-        
+
         Args:
             experiment: Name of the experiment
             dataset: Name of the dataset to use
             task: Task function to execute
             evaluators: Optional list of evaluator functions
             space_id: Optional space ID (uses config default if not provided)
-        
+
         Returns:
             Experiment results
-        
+
         Raises:
             ArizeClientApiError: If the API call fails
         """
@@ -124,7 +125,7 @@ class Arize:
                 dataset_name=dataset,
                 task=task,
                 evaluators=evaluators,
-                experiment_name=experiment
+                experiment_name=experiment,
             )
         except Exception as e:
             # Wrap other errors in ArizeClientApiError
@@ -141,14 +142,14 @@ class Arize:
         dataset: str,
     ) -> Any:
         """Get experiment information.
-        
+
         Args:
             experiment: Name of the experiment
             dataset: Name of the dataset
-        
+
         Returns:
             Experiment information
-        
+
         Raises:
             ArizeClientApiError: If the API call fails
         """
@@ -160,12 +161,12 @@ class Arize:
             return self._client.get_experiment(
                 space_id=self._space_id,
                 experiment_name=experiment,
-                dataset_name=dataset
+                dataset_name=dataset,
             )
         except Exception as e:
             # If the experiment does not exist, return None
             if ("Failed to get experiment") in str(e):
                 return None
-            
+
             # Let other errors propagate up
             raise

@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from arize_experiment.core.evaluator import BaseEvaluator, EvaluationResult
 from arize_experiment.core.task import Task, TaskResult
 
+
 @dataclass
 class ExperimentResult:
     """Result of an experiment run."""
@@ -26,7 +27,7 @@ class ExperimentResult:
 @dataclass
 class Experiment:
     """Core experiment domain model.
-    
+
     An experiment consists of a task to run and optional evaluators to assess
     the task's output. The experiment can be configured with metadata tags
     and a description.
@@ -52,9 +53,9 @@ class Experiment:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert experiment to dictionary format.
-        
+
         This is useful for serialization and API communication.
-        
+
         Returns:
             Dict containing the experiment configuration
         """
