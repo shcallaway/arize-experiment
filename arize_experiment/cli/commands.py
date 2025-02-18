@@ -9,7 +9,7 @@ from typing import Optional, Tuple
 
 import click
 
-from arize_experiment.cli.handler import Handler, HandlerError
+from arize_experiment.cli.handler import Handler
 
 logger = logging.getLogger(__name__)
 

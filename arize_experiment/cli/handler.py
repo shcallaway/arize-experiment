@@ -11,7 +11,7 @@ from arize_experiment.tasks.sentiment_classification import SentimentClassificat
 from arize_experiment.evaluators.sentiment_classification_accuracy import (
     SentimentClassificationAccuracyEvaluator,
 )
-from arize_experiment.core.arize import Arize
+from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
@@ -65,21 +65,23 @@ class Handler:
         """
         try:
             # Get Arize values from env
-            logger.debug("Loading Arize values from env")
+            logger.debug("Creating Arize client configuration")
             try:
-                arize_api_key = self._get_arize_api_key()
-                arize_space_id = self._get_arize_space_id()
-                arize_developer_key = self._get_arize_developer_key()
+                arize_config = ArizeClientConfiguration(
+                    api_key=self._get_arize_api_key(),
+                    space_id=self._get_arize_space_id(),
+                    developer_key=self._get_arize_developer_key(),
+                )
             except Exception as e:
-                raise HandlerError(f"Failed to load Arize values from env: {str(e)}")
+                raise HandlerError(
+                    f"Failed to create Arize client configuration: {str(e)}"
+                )
 
             # Initialize Arize client
             logger.debug("Initializing Arize client")
             try:
-                arize = Arize(
-                    api_key=arize_api_key,
-                    developer_key=arize_developer_key,
-                    space_id=arize_space_id,
+                arize_client = ArizeClient(
+                    config=arize_config,
                 )
             except Exception as e:
                 raise HandlerError(f"Failed to initialize Arize client: {str(e)}")
@@ -96,7 +98,7 @@ class Handler:
             # Check if experiment already exists
             logger.info(f"Checking if experiment '{name}' already exists")
             try:
-                existing = arize.get_experiment(
+                existing = arize_client.get_experiment(
                     experiment=name,
                     dataset=dataset,
                 )
@@ -118,17 +120,15 @@ class Handler:
 
             # Run experiment
             logger.info(f"Running experiment: {name}")
-            result = arize.run_experiment(
+            result = arize_client.run_experiment(
                 experiment=name,
                 dataset=dataset,
                 task=task,
                 evaluators=evaluators if evaluators else None,
             )
 
-            # Log the result for debugging
-            logger.debug(f"Experiment result: {result}")
-
             # Print the result of the experiment
+            logger.debug(f"Experiment result: {result}")
             if hasattr(result, "success"):
                 if result.success:
                     click.secho(f"\nSuccessfully ran experiment '{name}'", fg="green")

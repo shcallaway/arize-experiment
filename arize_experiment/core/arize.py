@@ -3,6 +3,7 @@ Enhanced Arize API client with better error handling and configuration.
 """
 
 import logging
+from dataclasses import dataclass
 from typing import Any, Callable, List, Optional
 from arize.experimental.datasets import ArizeDatasetsClient
 
@@ -21,7 +22,22 @@ class ArizeClientApiError(ArizeClientError):
     pass
 
 
-class Arize:
+@dataclass
+class ArizeClientConfiguration:
+    """Configuration for the Arize client."""
+
+    def __init__(
+        self,
+        api_key: str,
+        developer_key: str,
+        space_id: str,
+    ):
+        self.api_key = api_key
+        self.developer_key = developer_key
+        self.space_id = space_id
+
+
+class ArizeClient:
     """Enhanced Arize API client wrapper.
 
     This class wraps the Arize datasets client with:
@@ -33,23 +49,21 @@ class Arize:
 
     def __init__(
         self,
-        api_key: str,
-        developer_key: str,
-        space_id: str,
+        config: ArizeClientConfiguration,
     ):
         """Initialize the client with configuration.
 
         Args:
             api_key: API key
             developer_key: Developer key
-            space_id: Space ID
+            config: Configuration
         """
-        self._space_id = space_id
+        self._space_id = config.space_id
 
         # Initialize the Arize datasets client
         self._client = self._create_client(
-            api_key=api_key,
-            developer_key=developer_key,
+            api_key=config.api_key,
+            developer_key=config.developer_key,
         )
 
         logger.info("Arize client initialized successfully")
