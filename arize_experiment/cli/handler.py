@@ -9,18 +9,17 @@ import click
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.tasks.sentiment_classification import SentimentClassificationTask
 from arize_experiment.evaluators.sentiment_classification_accuracy import SentimentClassificationAccuracyEvaluator
-from arize_experiment.infrastructure.arize_client import ArizeClient
+from arize_experiment.core.arize import Arize
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
-
 
 class HandlerError(Exception):
     """Raised when command handling fails."""
     pass
 
 
-class CommandHandler:
+class Handler:
     """Handles CLI command execution.
     
     This class coordinates between the CLI interface and the application's
@@ -73,7 +72,7 @@ class CommandHandler:
             # Initialize Arize client
             logger.debug("Initializing Arize client")
             try:
-                arize_client = ArizeClient(
+                arize = Arize(
                     api_key=arize_api_key,
                     developer_key=arize_developer_key,
                     space_id=arize_space_id,
@@ -93,7 +92,7 @@ class CommandHandler:
             # Check if experiment already exists
             logger.info(f"Checking if experiment '{name}' already exists")
             try:
-                existing = arize_client.get_experiment(
+                existing = arize.get_experiment(
                     experiment=name,
                     dataset=dataset,
                 )
@@ -113,7 +112,7 @@ class CommandHandler:
 
             # Run experiment
             logger.info(f"Running experiment: {name}")
-            result = arize_client.run_experiment(
+            result = arize.run_experiment(
                 experiment=name,
                 dataset=dataset,
                 task=task,
@@ -220,7 +219,6 @@ class CommandHandler:
         """
         try:
             api_key = self._get_required_env("OPENAI_API_KEY")
-
             return SentimentClassificationAccuracyEvaluator(
                 api_key=api_key,
             )
@@ -246,6 +244,8 @@ class CommandHandler:
             return []
 
         evaluators = []
+
+        # For each evaluator name, create an evaluator instance
         for name in evaluator_names:
             if name == "sentiment_classification_accuracy":
                 evaluator = self._create_sentiment_classification_accuracy_evaluator()
@@ -269,6 +269,8 @@ class CommandHandler:
             HandlerError: If the variable is not set
         """
         value = os.getenv(name)
+
+        # If the variable is not set, raise an error
         if not value:
             error_msg = (
                 f"{name} environment variable is not set.\n"
@@ -277,4 +279,5 @@ class CommandHandler:
             )
             logger.error(error_msg)
             raise HandlerError(error_msg)
+        
         return value

@@ -4,7 +4,6 @@ Enhanced Arize API client with better error handling and configuration.
 
 import logging
 from typing import Any, Callable, List, Optional
-
 from arize.experimental.datasets import ArizeDatasetsClient
 
 logger = logging.getLogger(__name__)
@@ -15,17 +14,12 @@ class ArizeClientError(Exception):
     pass
 
 
-class ConfigurationError(ArizeClientError):
-    """Raised when there are issues with client configuration."""
-    pass
-
-
-class APIError(ArizeClientError):
+class ArizeClientApiError(ArizeClientError):
     """Raised when there are issues with API calls."""
     pass
 
 
-class ArizeClient:
+class Arize:
     """Enhanced Arize API client wrapper.
     
     This class wraps the Arize datasets client with:
@@ -47,19 +41,33 @@ class ArizeClient:
             api_key: API key
             developer_key: Developer key
             space_id: Space ID
-        
-        Raises:
-            ConfigurationError: If configuration is invalid
         """
         self._space_id = space_id
-
+        
         # Initialize the Arize datasets client
-        self._client = ArizeDatasetsClient(
+        self._client = self._create_client(
             api_key=api_key,
             developer_key=developer_key,
         )
 
         logger.info("Arize client initialized successfully")
+
+    def _create_client(
+        self,
+        api_key: str,
+        developer_key: str,
+    ) -> ArizeDatasetsClient:
+        """Create the Arize datasets client."""
+        try:
+            logger.debug("Creating Arize datasets client")
+            return ArizeDatasetsClient(
+                api_key=api_key,
+                developer_key=developer_key,
+            )
+        except Exception as e:
+            error_msg = f"Failed to create Arize datasets client: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            raise ArizeClientError(error_msg) from e
 
     def get_dataset(self, dataset: str) -> Any:
         """Get a dataset by name.
@@ -71,7 +79,7 @@ class ArizeClient:
             Dataset information
         
         Raises:
-            APIError: If the API call fails
+            ArizeClientApiError: If the API call fails
         """
         try:
             logger.debug(f"Getting dataset: {dataset}")
@@ -82,7 +90,7 @@ class ArizeClient:
         except Exception as e:
             error_msg = f"Failed to get dataset '{dataset}': {str(e)}"
             logger.error(error_msg, exc_info=True)
-            raise APIError(error_msg) from e
+            raise ArizeClientApiError(error_msg) from e
 
     def run_experiment(
         self,
@@ -104,7 +112,7 @@ class ArizeClient:
             Experiment results
         
         Raises:
-            APIError: If the API call fails
+            ArizeClientApiError: If the API call fails
         """
         try:
             logger.debug(
@@ -119,13 +127,13 @@ class ArizeClient:
                 experiment_name=experiment
             )
         except Exception as e:
-            # Wrap other errors in APIError
+            # Wrap other errors in ArizeClientApiError
             error_msg = (
                 f"Failed to run experiment '{experiment}' "
                 f"on dataset '{dataset}': {str(e)}"
             )
             logger.error(error_msg, exc_info=True)
-            raise APIError(error_msg) from e
+            raise ArizeClientApiError(error_msg) from e
 
     def get_experiment(
         self,
@@ -142,7 +150,7 @@ class ArizeClient:
             Experiment information
         
         Raises:
-            APIError: If the API call fails
+            ArizeClientApiError: If the API call fails
         """
         try:
             logger.debug(
