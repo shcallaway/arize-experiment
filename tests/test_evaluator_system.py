@@ -23,7 +23,7 @@ class MockTask(Task):
     
     def execute(self, input_data: str) -> TaskResult:
         return TaskResult(
-            input=input_data,
+            input={"input": input_data},  # Match the expected input format
             output="positive",
             success=True,
             error=None
@@ -50,13 +50,15 @@ def test_configurable_evaluator():
     config = {
         "type": "sentiment_classification_accuracy",
         "model": "gpt-4",
-        "temperature": 0.5
+        "temperature": 0.5,
+        "api_key": "test-key"
     }
     
     evaluator = ConfigurableEvaluator.from_config(config)
     assert isinstance(evaluator, SentimentClassificationAccuracyEvaluator)
     assert evaluator._model == "gpt-4"
     assert evaluator._temperature == 0.5
+    assert evaluator._client.api_key == "test-key"
     
     # Test invalid configuration
     with pytest.raises(ValueError):
@@ -73,7 +75,8 @@ def test_experiment_with_evaluators():
         {
             "type": "sentiment_classification_accuracy",
             "model": "gpt-4",
-            "temperature": 0.0
+            "temperature": 0.0,
+            "api_key": "test-key"
         }
     ]
     
