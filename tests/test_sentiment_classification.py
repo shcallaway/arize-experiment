@@ -78,7 +78,7 @@ def test_execute_invalid_input_format(
     task = SentimentClassificationTask()
 
     # Test with non-dict input
-    result = task.execute({"input": "invalid input"})
+    result = task.execute("not a dict")
     assert not result.success
     assert result.error is not None
     assert "must be a dictionary" in str(result.error).lower()
