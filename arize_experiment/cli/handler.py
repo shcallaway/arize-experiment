@@ -12,7 +12,6 @@ from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
 from arize_experiment.core.configurable_evaluator import ConfigurableEvaluator
 from arize_experiment.core.errors import ConfigurationError, HandlerError
 from arize_experiment.core.evaluator import BaseEvaluator
-from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import Task
 from arize_experiment.evaluators.sentiment_classification_accuracy import (
     SentimentClassificationAccuracyEvaluator,
@@ -340,7 +339,7 @@ class Handler:
                     "temperature": 0.0,
                     "api_key": os.getenv("OPENAI_API_KEY"),
                 }
-                
+
                 # Use the registry system to create the evaluator
                 evaluator = ConfigurableEvaluator.from_config(config)
                 evaluators.append(evaluator)

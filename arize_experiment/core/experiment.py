@@ -3,7 +3,7 @@ Core experiment domain model for arize-experiment.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from arize_experiment.core.configurable_evaluator import ConfigurableEvaluator
 from arize_experiment.core.evaluator import BaseEvaluator
@@ -50,7 +50,7 @@ class Experiment:
             raise ValueError("Dataset name cannot be empty")
         if not isinstance(self.task, Task):
             raise ValueError(f"Task must be an instance of Task, got {type(self.task)}")
-        
+
         # Initialize evaluators from configs
         self._evaluators = []
         for config in self.evaluator_configs:

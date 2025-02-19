@@ -40,7 +40,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
 
     This evaluator uses GPT-4o-mini to analyze whether a given sentiment
     classification (positive, neutral, negative) is appropriate for input text.
-    
+
     Configuration:
         {
             "type": "sentiment_classification_accuracy",
@@ -63,6 +63,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
             temperature: Model temperature (0-1)
             api_key: Optional OpenAI API key (uses env var if not provided)
         """
+        super().__init__()
         self._model = model
         self._temperature = temperature
         self._client = OpenAI(api_key=api_key) if api_key else OpenAI()

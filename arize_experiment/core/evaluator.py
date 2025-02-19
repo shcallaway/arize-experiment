@@ -25,6 +25,13 @@ class BaseEvaluator(ABC):
     3. Returning a standardized evaluation result
     """
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the evaluator.
+
+        Subclasses can override this with their own initialization parameters.
+        """
+        super().__init__()
+
     @property
     @abstractmethod
     def name(self) -> str:

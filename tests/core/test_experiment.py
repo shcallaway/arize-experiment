@@ -2,10 +2,9 @@
 Tests for the experiment module.
 """
 
-import pytest
 from typing import Any, Dict
-from unittest.mock import Mock
 
+import pytest
 from arize.experimental.datasets.experiments.types import EvaluationResult
 
 from arize_experiment.core.evaluator import BaseEvaluator
@@ -30,6 +29,7 @@ class MockEvaluator(BaseEvaluator):
     """Mock evaluator for testing."""
 
     def __init__(self, score: float = 1.0, label: str = "mock_label"):
+        super().__init__()
         self.score = score
         self.label = label
 
@@ -51,7 +51,7 @@ def test_experiment_to_dict() -> None:
         {"type": "mock_evaluator", "score": 1.0, "label": "mock_1"},
         {"type": "mock_evaluator", "score": 0.5, "label": "mock_2"},
     ]
-    
+
     experiment = Experiment(
         name="test_experiment",
         dataset="test_dataset",
@@ -81,7 +81,7 @@ def test_experiment_to_dict_minimal() -> None:
     evaluator_configs = [
         {"type": "mock_evaluator", "score": 1.0, "label": "mock_label"},
     ]
-    
+
     experiment = Experiment(
         name="test_experiment",
         dataset="test_dataset",
@@ -108,14 +108,14 @@ def test_experiment_init() -> None:
     evaluator_configs = [
         {"type": "mock_evaluator", "score": 1.0, "label": "mock_label"},
     ]
-    
+
     experiment = Experiment(
         name="test_experiment",
         dataset="test_dataset",
         task=MockTask(),
         evaluator_configs=evaluator_configs,
     )
-    
+
     assert experiment.task is not None
     assert len(experiment.evaluators) == 1
     assert isinstance(experiment.evaluators[0], MockEvaluator)
@@ -126,7 +126,7 @@ def test_experiment_invalid_evaluator_config() -> None:
     invalid_configs = [
         {"type": "nonexistent_evaluator"},
     ]
-    
+
     with pytest.raises(ValueError):
         Experiment(
             name="test_experiment",
@@ -141,18 +141,18 @@ def test_experiment_evaluator_execution() -> None:
     evaluator_configs = [
         {"type": "mock_evaluator", "score": 0.8, "label": "test_label"},
     ]
-    
+
     experiment = Experiment(
         name="test_experiment",
         dataset="test_dataset",
         task=MockTask(),
         evaluator_configs=evaluator_configs,
     )
-    
+
     # Get the configured evaluator
     evaluator = experiment.evaluators[0]
     assert isinstance(evaluator, MockEvaluator)
-    
+
     # Test evaluation
     result = evaluator.evaluate("test_output")
     assert result.score == 0.8
@@ -166,20 +166,20 @@ def test_experiment_multiple_evaluators() -> None:
         {"type": "mock_evaluator", "score": 0.6, "label": "evaluator_2"},
         {"type": "mock_evaluator", "score": 0.4, "label": "evaluator_3"},
     ]
-    
+
     experiment = Experiment(
         name="test_experiment",
         dataset="test_dataset",
         task=MockTask(),
         evaluator_configs=evaluator_configs,
     )
-    
+
     # Verify all evaluators are initialized
     assert len(experiment.evaluators) == 3
-    
+
     # Verify each evaluator's configuration
     for i, evaluator in enumerate(experiment.evaluators):
         assert isinstance(evaluator, MockEvaluator)
         result = evaluator.evaluate("test_output")
         assert result.score == evaluator_configs[i]["score"]
-        assert result.label == evaluator_configs[i]["label"] 
+        assert result.label == evaluator_configs[i]["label"]
