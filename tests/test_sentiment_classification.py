@@ -36,7 +36,8 @@ def mock_openai_client(mock_openai_response: Mock) -> Mock:
     return mock_client
 
 
-def test_task_initialization() -> None:
+@patch("arize_experiment.tasks.sentiment_classification.OpenAI")
+def test_task_initialization(mock_openai: Mock) -> None:
     """Test that the task initializes with default and custom parameters."""
     # Test with defaults
     task = SentimentClassificationTask()
@@ -117,7 +118,8 @@ def test_execute_api_error(mock_openai: Mock) -> None:
     assert "api error" in str(result.error).lower()
 
 
-def test_parse_llm_output() -> None:
+@patch("arize_experiment.tasks.sentiment_classification.OpenAI")
+def test_parse_llm_output(mock_openai: Mock) -> None:
     """Test LLM output parsing."""
     task = SentimentClassificationTask()
 
@@ -176,14 +178,16 @@ def test_execute_end_to_end(mock_openai: Mock) -> None:
     assert metadata.get("temperature") == 0.5
 
 
-def test_sentiment_classification_init() -> None:
+@patch("arize_experiment.tasks.sentiment_classification.OpenAI")
+def test_sentiment_classification_init(mock_openai: Mock) -> None:
     """Test sentiment classification task initialization."""
     task = SentimentClassificationTask()
     assert task._model == "gpt-4o-mini"
     assert task._temperature == 0
 
 
-def test_sentiment_classification_execute() -> None:
+@patch("arize_experiment.tasks.sentiment_classification.OpenAI")
+def test_sentiment_classification_execute(mock_openai: Mock) -> None:
     """Test sentiment classification task execution."""
     task = SentimentClassificationTask()
     task._client = Mock()
@@ -200,7 +204,8 @@ def test_sentiment_classification_execute() -> None:
     assert metadata.get("temperature") == 0
 
 
-def test_sentiment_classification_execute_with_error() -> None:
+@patch("arize_experiment.tasks.sentiment_classification.OpenAI")
+def test_sentiment_classification_execute_with_error(mock_openai: Mock) -> None:
     """Test sentiment classification task execution with error."""
     task = SentimentClassificationTask()
     task._client = Mock()
@@ -215,19 +220,22 @@ def test_sentiment_classification_execute_with_error() -> None:
     assert metadata.get("temperature") == 0
 
 
-def test_task_name() -> None:
+@patch("arize_experiment.tasks.sentiment_classification.OpenAI")
+def test_task_name(mock_openai: Mock) -> None:
     """Test the task name property."""
     task = SentimentClassificationTask()
     assert task.name == "sentiment_classification"
 
 
-def test_task_model() -> None:
+@patch("arize_experiment.tasks.sentiment_classification.OpenAI")
+def test_task_model(mock_openai: Mock) -> None:
     """Test the model property."""
     task = SentimentClassificationTask(model="gpt-4")
     assert task._model == "gpt-4"
 
 
-def test_task_temperature() -> None:
+@patch("arize_experiment.tasks.sentiment_classification.OpenAI")
+def test_task_temperature(mock_openai: Mock) -> None:
     """Test the temperature property."""
     task = SentimentClassificationTask(temperature=0.7)
     assert task._temperature == 0.7

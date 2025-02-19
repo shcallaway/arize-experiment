@@ -76,8 +76,15 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         """
         try:
             text = text.strip().lower()
+            if not (text.startswith("correct") or text.startswith("incorrect")):
+                raise ValueError("Output must start with 'correct' or 'incorrect'")
             correct = text.startswith("correct")
-            explanation = text[text.find(" ")].strip()
+            space_pos = text.find(" ")
+            if space_pos == -1:
+                raise ValueError("No explanation found in output")
+            explanation = text[space_pos:].strip()
+            if not explanation:
+                raise ValueError("Empty explanation")
             return correct, explanation
         except Exception as e:
             raise ValueError(f"Failed to parse LLM output: {str(e)}")
