@@ -14,11 +14,6 @@ from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import Task
 from arize_experiment.core.task_registry import TaskRegistry
-from arize_experiment.evaluators.sentiment_classification_accuracy import (
-    SentimentClassificationAccuracyEvaluator,
-)
-from arize_experiment.tasks.execute_agent import ExecuteAgentTask
-from arize_experiment.tasks.sentiment_classification import SentimentClassificationTask
 
 logger = logging.getLogger(__name__)
 
@@ -229,52 +224,11 @@ class Handler:
 
         return tags
 
-    def _create_sentiment_classification_accuracy_evaluator(
-        self,
-    ) -> SentimentClassificationAccuracyEvaluator:
-        """Create a sentiment classification accuracy evaluator.
-
-        Returns:
-            SentimentClassificationAccuracyEvaluator instance
-
-        Raises:
-            HandlerError: If the evaluator cannot be created
-        """
-        try:
-            api_key = self._get_required_env("OPENAI_API_KEY")
-            return SentimentClassificationAccuracyEvaluator(
-                api_key=api_key,
-            )
-        except Exception as e:
-            raise HandlerError(
-                f"Failed to create sentiment classification accuracy "
-                f"evaluator: {str(e)}"
-            )
-
-    def _create_execute_agent_task(
-        self,
-    ) -> ExecuteAgentTask:
-        """Create an execute agent task instance.
-
-        Returns:
-            ExecuteAgentTask instance
-
-        Raises:
-            HandlerError: If the task cannot be created
-        """
-        try:
-            # Get URL from environment variable or use default
-            url = os.getenv("AGENT_SERVER_URL", "http://localhost:8080")
-            task_class = TaskRegistry.get("execute_agent")
-            return task_class(url=url)  # type: ignore
-        except Exception as e:
-            raise HandlerError(f"Failed to create execute agent task: {str(e)}")
-
     def _create_task(
         self,
         task_name: str,
     ) -> Task:
-        """Create a task instance.
+        """Create task instance from name.
 
         Args:
             task_name: Name of the task
@@ -283,41 +237,22 @@ class Handler:
             Task instance
 
         Raises:
-            HandlerError: If the task cannot be created
+            HandlerError: If task creation fails
         """
+        if not task_name:
+            raise HandlerError("No task name provided")
+
         try:
-            if task_name == "execute_agent":
-                return self._create_execute_agent_task()
-            elif task_name == "sentiment_classification":
-                return self._create_sentiment_classification_task()
-            else:
-                task_class = TaskRegistry.get(task_name)
-                return task_class()
-        except Exception as e:
-            raise HandlerError(f"Failed to create task {task_name}: {str(e)}")
-
-    def _create_sentiment_classification_task(
-        self,
-    ) -> SentimentClassificationTask:
-        """Create a sentiment classification task instance.
-
-        Returns:
-            SentimentClassificationTask instance
-
-        Raises:
-            HandlerError: If the task cannot be created
-        """
-        try:
-            api_key = self._get_required_env("OPENAI_API_KEY")
-            task_class = TaskRegistry.get("sentiment_classification")
-            return task_class(  # type: ignore
-                api_key=api_key,
-                model="gpt-4o-mini",
-            )
+            # Get the task class from the registry
+            task_class = TaskRegistry.get(task_name)
+            task = task_class()
         except Exception as e:
             raise HandlerError(
-                f"Failed to create sentiment classification task: {str(e)}"
+                f"Failed to create task '{task_name}'",
+                details={"error": str(e)},
             )
+
+        return task
 
     def _create_evaluators(self, names: Optional[List[str]]) -> Sequence[BaseEvaluator]:
         """Create evaluator instances from names.
@@ -339,14 +274,7 @@ class Handler:
             try:
                 # Get the evaluator class from the registry
                 evaluator_class = EvaluatorRegistry.get(name)
-
-                # Initialize with required environment variables if needed
-                if name == "sentiment_classification_accuracy":
-                    api_key = self._get_required_env("OPENAI_API_KEY")
-                    evaluator = evaluator_class(api_key=api_key)
-                else:
-                    evaluator = evaluator_class()
-
+                evaluator = evaluator_class()
                 evaluators.append(evaluator)
             except Exception as e:
                 raise HandlerError(

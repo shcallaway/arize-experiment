@@ -26,6 +26,34 @@ def mock_handler():
         yield handler_instance
 
 
+@pytest.fixture(autouse=True)
+def mock_env_vars():
+    """Fixture that mocks required environment variables."""
+    with patch.dict(
+        os.environ,
+        {
+            "ARIZE_API_KEY": "test-api-key",
+            "ARIZE_SPACE_ID": "test-space-id",
+            "ARIZE_DEVELOPER_KEY": "test-developer-key",
+        },
+    ):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def mock_registries():
+    """Fixture that mocks the task and evaluator registries."""
+    with (
+        patch("arize_experiment.cli.commands.TaskRegistry.list") as mock_task_list,
+        patch(
+            "arize_experiment.cli.commands.EvaluatorRegistry.list"
+        ) as mock_evaluator_list,
+    ):
+        mock_task_list.return_value = ["sentiment_classification"]
+        mock_evaluator_list.return_value = ["sentiment_classification_accuracy"]
+        yield
+
+
 def test_cli_help(cli_runner):
     """Test that the CLI help command works."""
     result = cli_runner.invoke(cli, ["--help"])
@@ -49,6 +77,8 @@ def test_run_command_minimal(cli_runner, mock_handler):
             "sentiment_classification_accuracy",
         ],
     )
+    if result.exit_code != 0:
+        print(f"\nCommand output:\n{result.output}")
     assert result.exit_code == 0
     mock_handler.run.assert_called_once_with(
         experiment_name="test-experiment",

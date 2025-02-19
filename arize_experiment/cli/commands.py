@@ -15,6 +15,17 @@ from arize_experiment.core.errors import pretty_print_error
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task_registry import TaskRegistry
 
+# Import all evaluators to ensure they are registered
+from arize_experiment.evaluators.sentiment_classification_accuracy import (  # noqa
+    SentimentClassificationAccuracyEvaluator,
+)
+from arize_experiment.tasks.execute_agent import ExecuteAgentTask  # noqa: F401
+
+# Import all tasks to ensure they are registered
+from arize_experiment.tasks.sentiment_classification import (  # noqa: F401
+    SentimentClassificationTask,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,6 +77,7 @@ results can be viewed in the Arize web dashboard."""
     "--task",
     "-t",
     required=True,
+    # callback=validate_task,
     type=click.Choice(TaskRegistry.list()),
     help="Name of the task to use",
 )
@@ -74,6 +86,7 @@ results can be viewed in the Arize web dashboard."""
     "-e",
     multiple=True,
     required=True,
+    # callback=validate_evaluator,
     type=click.Choice(EvaluatorRegistry.list()),
     help="Name of an evaluator to use (can be used multiple times)",
 )
