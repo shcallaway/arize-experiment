@@ -4,20 +4,19 @@ Command handlers for the CLI interface.
 
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
+
 import click
+
+from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
+from arize_experiment.core.errors import ConfigurationError, HandlerError
 from arize_experiment.core.evaluator import BaseEvaluator
-from arize_experiment.tasks.sentiment_classification import SentimentClassificationTask
+from arize_experiment.core.task import Task
 from arize_experiment.evaluators.sentiment_classification_accuracy import (
     SentimentClassificationAccuracyEvaluator,
 )
-from arize_experiment.core.task import Task
 from arize_experiment.tasks.execute_agent import ExecuteAgentTask
-from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
-from arize_experiment.core.errors import (
-    ConfigurationError,
-    HandlerError,
-)
+from arize_experiment.tasks.sentiment_classification import SentimentClassificationTask
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +31,11 @@ class Handler:
     3. Error handling and user feedback
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the command handler."""
         pass
 
-    def run(
+    def run(  # noqa: C901
         self,
         experiment_name: str,
         dataset_name: str,
@@ -132,7 +131,7 @@ class Handler:
         task = self._create_task(task_name)
 
         # Make sure evaluators are provided
-        if len(evaluator_names) <= 0:
+        if not evaluator_names:
             raise HandlerError("No evaluators provided")
 
         # Create evaluator callables
@@ -145,7 +144,7 @@ class Handler:
                 experiment_name=experiment_name,
                 dataset_name=dataset_name,
                 task=task,
-                evaluators=evaluators,
+                evaluators=cast(Optional[List[Callable[..., Any]]], evaluators),
             )
         except Exception as e:
             raise HandlerError(
@@ -199,7 +198,9 @@ class Handler:
         """
         return self._get_required_env("ARIZE_DEVELOPER_KEY")
 
-    def _parse_raw_tags(self, raw_tags: Optional[List[str]]) -> Optional[Dict[str, str]]:
+    def _parse_raw_tags(
+        self, raw_tags: Optional[List[str]]
+    ) -> Optional[Dict[str, str]]:
         """Parse tag strings into a dictionary.
 
         Args:
@@ -244,7 +245,8 @@ class Handler:
             )
         except Exception as e:
             raise HandlerError(
-                f"Failed to create sentiment classification accuracy evaluator: {str(e)}"
+                f"Failed to create sentiment classification accuracy "
+                f"evaluator: {str(e)}"
             )
 
     def _create_execute_agent_task(
@@ -309,32 +311,29 @@ class Handler:
                 f"Failed to create sentiment classification task: {str(e)}"
             )
 
-    def _create_evaluators(self, names: Optional[List[str]]) -> List[BaseEvaluator]:
-        """Create evaluator instances from names.
+    def _create_evaluators(self, names: Optional[List[str]]) -> Sequence[BaseEvaluator]:
+        """Create evaluator instances.
 
         Args:
-            names: Optional list of evaluator names
+            names: List of evaluator names
 
         Returns:
             List of evaluator instances
 
         Raises:
-            ConfigurationError: If an evaluator cannot be created
+            HandlerError: If evaluator creation fails
         """
         if not names:
             return []
 
-        evaluators = []
-
-        # For each evaluator name, create an evaluator instance
+        evaluators: List[BaseEvaluator] = []
         for name in names:
             if name == "sentiment_classification_accuracy":
-                evaluator = self._create_sentiment_classification_accuracy_evaluator()
-            elif name == "execute_agent":
-                evaluator = self._create_execute_agent_evaluator()
+                evaluators.append(
+                    self._create_sentiment_classification_accuracy_evaluator()
+                )
             else:
-                raise ConfigurationError(f"Unknown evaluator: {name}")
-            evaluators.append(evaluator)
+                raise HandlerError(f"Unknown evaluator: {name}")
 
         return evaluators
 

@@ -3,14 +3,21 @@ Evaluator for judging the accuracy of sentiment classifications using OpenAI's A
 """
 
 import logging
-from typing import Any, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
-from arize_experiment.core.task import TaskResult
+from arize.experimental.datasets.experiments.types import EvaluationResult
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
+from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
+from openai.types.chat.chat_completion_system_message_param import (
+    ChatCompletionSystemMessageParam,
+)
+from openai.types.chat.chat_completion_user_message_param import (
+    ChatCompletionUserMessageParam,
+)
 
 from arize_experiment.core.evaluator import BaseEvaluator
-from arize.experimental.datasets.experiments.types import EvaluationResult
+from arize_experiment.core.task import TaskResult
 
 logger = logging.getLogger(__name__)
 
@@ -101,15 +108,15 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         logger.info(f"Sentiment: {sentiment}")
 
         try:
-            messages = [
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT,
-                },
-                {
-                    "role": "user",
-                    "content": (f"Input: {input}\n" f"Classification: {sentiment}"),
-                },
+            messages: List[ChatCompletionMessageParam] = [
+                ChatCompletionSystemMessageParam(
+                    role="system",
+                    content=SYSTEM_PROMPT,
+                ),
+                ChatCompletionUserMessageParam(
+                    role="user",
+                    content=f"Input: {input}\nClassification: {sentiment}",
+                ),
             ]
 
             response: ChatCompletion = self._client.chat.completions.create(
@@ -118,9 +125,11 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 temperature=self._temperature,
             )
 
-            correct, explanation = self._parse_llm_output(
-                response.choices[0].message.content
-            )
+            content = response.choices[0].message.content
+            if content is None:
+                raise ValueError("LLM returned empty response")
+
+            correct, explanation = self._parse_llm_output(content)
 
             label = "correct" if correct else "incorrect"
             score = 1.0 if correct else 0.0
@@ -150,7 +159,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 input=task_result["input"],
                 output=task_result["output"],
                 metadata=task_result.get("metadata", {}),
-                error=task_result.get("error", None),
+                error=task_result.get("error"),
             )
 
         return self.evaluate(task_result)

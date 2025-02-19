@@ -4,25 +4,26 @@ This task uses OpenAI's language models to classify text sentiment
 as positive, negative, or neutral.
 """
 
-from arize_experiment.core.task import Task
-from arize_experiment.core.task import TaskResult
-from arize_experiment.core.errors import TaskError
+import logging
+from typing import Any, Dict, Optional
+
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
-from typing import Dict, Any
-import logging
+
+from arize_experiment.core.errors import TaskError
+from arize_experiment.core.task import Task, TaskResult
 
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """
-You are a sentiment analyzer. Classify the following text as either 'positive','negative',
-or 'neutral'. Respond with just one word.
+You are a sentiment analyzer. Classify the following text as either 'positive',
+'negative', or 'neutral'. Respond with just one word.
 """
 
 
 class SentimentClassificationTask(Task):
     """Task for classifying text sentiment using OpenAI's API.
-    
+
     This task uses OpenAI's language models to analyze text and classify
     its sentiment as either positive, negative, or neutral.
     """
@@ -31,7 +32,7 @@ class SentimentClassificationTask(Task):
         self,
         model: str = "gpt-4o-mini",
         temperature: float = 0,
-        api_key: str = None,
+        api_key: Optional[str] = None,
     ):
         """Initialize the sentiment classification task.
 
@@ -47,7 +48,7 @@ class SentimentClassificationTask(Task):
     @property
     def name(self) -> str:
         """Get the task name.
-        
+
         Returns:
             str: The unique identifier for this task
         """
@@ -92,7 +93,11 @@ class SentimentClassificationTask(Task):
             )
 
             # Parse and return result
-            result = self._parse_llm_output(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            if content is None:
+                raise TaskError("LLM returned empty response")
+
+            result = self._parse_llm_output(content)
 
             return TaskResult(
                 input=Input,

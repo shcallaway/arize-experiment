@@ -210,6 +210,21 @@ Run tests for specific file:
 pytest tests/<filename>.py
 ```
 
+### Type Checking
+
+Run static type checking with mypy:
+
+```bash
+# Install mypy if not already installed
+pip install mypy
+
+# Run type checking
+mypy arize_experiment/
+
+# Run type checking with specific options
+mypy --strict arize_experiment/
+```
+
 ### Contributing
 
 1. Fork the repository

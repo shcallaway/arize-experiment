@@ -40,7 +40,7 @@ class Experiment:
     description: Optional[str] = None
     tags: Dict[str, str] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate the experiment configuration."""
         if not self.name:
             raise ValueError("Experiment name cannot be empty")

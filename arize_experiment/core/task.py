@@ -9,13 +9,14 @@ way to execute tasks and handle their results.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+
 from arize_experiment.core.errors import TaskError
 
 
 @dataclass
 class TaskResult:
     """Standardized result type for all tasks.
-    
+
     This dataclass encapsulates the input, output, and metadata for a task execution.
     It also tracks any errors that occurred during execution.
 
@@ -34,7 +35,7 @@ class TaskResult:
     @property
     def success(self) -> bool:
         """Check if the task executed successfully.
-        
+
         Returns:
             bool: True if no error occurred, False otherwise
         """
@@ -90,7 +91,7 @@ class Task(ABC):
 
     def __str__(self) -> str:
         """Get a string representation of the task.
-        
+
         Returns:
             str: A human-readable string describing this task
         """

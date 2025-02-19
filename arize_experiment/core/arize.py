@@ -5,7 +5,9 @@ Enhanced Arize API client with better error handling and configuration.
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional
+
 from arize.experimental.datasets import ArizeDatasetsClient
+
 from arize_experiment.core.errors import ArizeClientError
 
 logger = logging.getLogger(__name__)

@@ -5,17 +5,19 @@ CLI command definitions for arize-experiment.
 import logging
 import os
 import sys
-from typing import Optional, Tuple
+from typing import Tuple
+
 import click
+from dotenv import load_dotenv
+
 from arize_experiment.cli.handler import Handler
 from arize_experiment.core.errors import pretty_print_error
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
 
 @click.group()
-def cli():
+def cli() -> None:
     """arize-experiment: A tool for running experiments on Arize.
 
     This CLI provides commands for interacting with the Arize platform
@@ -83,11 +85,11 @@ def cli():
 )
 def run(
     name: str,
-    dataset: Optional[str],
-    task: Optional[str],
+    dataset: str,
+    task: str,
     tag: Tuple[str, ...],
     evaluator: Tuple[str, ...],
-):
+) -> None:
     """Run an experiment on Arize.
 
     This command creates and runs a new experiment on the Arize platform
@@ -137,7 +139,7 @@ def run(
         sys.exit(1)
 
 
-def main():
+def main() -> None:
     """Main entry point for the CLI."""
     try:
         cli()

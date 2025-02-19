@@ -2,12 +2,9 @@
 Example task implementation using the Task base class.
 """
 
-import logging
 from typing import Any
 
 from arize_experiment.core.task import Task, TaskResult
-
-logger = logging.getLogger(__name__)
 
 
 class EchoTask(Task):
@@ -17,7 +14,7 @@ class EchoTask(Task):
     It simply returns whatever input it receives.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the echo task."""
         self._validated = False
 
@@ -38,4 +35,4 @@ class EchoTask(Task):
             - Optional metadata about the input type
             - No error (this task cannot fail)
         """
-        return TaskResult(output=Input, metadata={})
+        return TaskResult(input=Input, output=Input, metadata={})
