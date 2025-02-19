@@ -11,32 +11,43 @@ from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 
 
-class TestEvaluator(BaseEvaluator):
-    """Test evaluator for registry testing."""
+@pytest.fixture
+def test_evaluator_class():
+    """Fixture providing a test evaluator class."""
 
-    @property
-    def name(self) -> str:
-        return "test_evaluator"
+    class TestEvaluator(BaseEvaluator):
+        """Test evaluator for registry testing."""
 
-    def evaluate(self, output: Any) -> EvaluationResult:
-        return EvaluationResult(score=1.0, label="test")
+        @property
+        def name(self) -> str:
+            return "test_evaluator"
 
-    def __call__(self, output: Any) -> EvaluationResult:
-        return self.evaluate(output)
+        def evaluate(self, output: Any) -> EvaluationResult:
+            return EvaluationResult(score=1.0, label="test")
+
+        def __call__(self, output: Any) -> EvaluationResult:
+            return self.evaluate(output)
+
+    return TestEvaluator
 
 
-def test_evaluator_registration():
+def test_evaluator_registration(test_evaluator_class):
     """Test registering an evaluator."""
+    # Clear registry before test
+    EvaluatorRegistry._evaluators.clear()
+
     # Register a test evaluator
-    EvaluatorRegistry.register("test_evaluator", TestEvaluator)
+    EvaluatorRegistry.register("test_evaluator", test_evaluator_class)
 
     # Verify it's registered
     assert "test_evaluator" in EvaluatorRegistry._evaluators
-    assert EvaluatorRegistry.get("test_evaluator") == TestEvaluator
+    assert EvaluatorRegistry.get("test_evaluator") == test_evaluator_class
 
 
 def test_evaluator_registration_decorator():
     """Test registering an evaluator using the decorator."""
+    # Clear registry before test
+    EvaluatorRegistry._evaluators.clear()
 
     @EvaluatorRegistry.register("decorator_test")
     class DecoratorTestEvaluator(BaseEvaluator):
@@ -55,25 +66,34 @@ def test_evaluator_registration_decorator():
     assert EvaluatorRegistry.get("decorator_test") == DecoratorTestEvaluator
 
 
-def test_duplicate_registration():
+def test_duplicate_registration(test_evaluator_class):
     """Test that registering the same name twice raises an error."""
-    EvaluatorRegistry.register("duplicate_test", TestEvaluator)
+    # Clear registry before test
+    EvaluatorRegistry._evaluators.clear()
+
+    EvaluatorRegistry.register("duplicate_test", test_evaluator_class)
 
     with pytest.raises(ValueError):
-        EvaluatorRegistry.register("duplicate_test", TestEvaluator)
+        EvaluatorRegistry.register("duplicate_test", test_evaluator_class)
 
 
 def test_get_nonexistent_evaluator():
     """Test that getting a nonexistent evaluator raises an error."""
+    # Clear registry before test
+    EvaluatorRegistry._evaluators.clear()
+
     with pytest.raises(ValueError):
         EvaluatorRegistry.get("nonexistent_evaluator")
 
 
-def test_list_evaluators():
+def test_list_evaluators(test_evaluator_class):
     """Test listing registered evaluators."""
+    # Clear registry before test
+    EvaluatorRegistry._evaluators.clear()
+
     # Register a few evaluators
-    EvaluatorRegistry.register("list_test_1", TestEvaluator)
-    EvaluatorRegistry.register("list_test_2", TestEvaluator)
+    EvaluatorRegistry.register("list_test_1", test_evaluator_class)
+    EvaluatorRegistry.register("list_test_2", test_evaluator_class)
 
     # Get the list
     evaluators = EvaluatorRegistry.list()

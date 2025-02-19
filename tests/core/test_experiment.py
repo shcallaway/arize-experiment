@@ -2,7 +2,7 @@
 Tests for the experiment module.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Generator, Type
 
 import pytest
 from arize.experimental.datasets.experiments.types import EvaluationResult
@@ -13,8 +13,51 @@ from arize_experiment.core.experiment import Experiment
 from arize_experiment.core.task import Task, TaskResult
 
 
+@pytest.fixture(autouse=True)
+def mock_evaluator_class() -> Generator[Type[BaseEvaluator], None, None]:
+    """Fixture providing the mock evaluator class.
+
+    This fixture also handles clearing and restoring the evaluator registry.
+    """
+    # Store original registry state
+    original_evaluators = EvaluatorRegistry._evaluators.copy()
+
+    # Clear registry
+    EvaluatorRegistry._evaluators.clear()
+
+    # Create and register mock evaluator
+    @EvaluatorRegistry.register("mock_evaluator")
+    class MockEvaluator(BaseEvaluator):
+        """Mock evaluator for testing."""
+
+        def __init__(self, score: float = 1.0, label: str = "mock_label"):
+            super().__init__()
+            self.score = score
+            self.label = label
+
+        @property
+        def name(self) -> str:
+            return "mock_evaluator"
+
+        def evaluate(self, output: Any) -> EvaluationResult:
+            return EvaluationResult(score=self.score, label=self.label)
+
+        def __call__(self, output: Any) -> EvaluationResult:
+            return self.evaluate(output)
+
+    yield MockEvaluator
+
+    # Restore original registry state
+    EvaluatorRegistry._evaluators.clear()
+    EvaluatorRegistry._evaluators.update(original_evaluators)
+
+
 class MockTask(Task):
     """Mock task for testing."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the mock task."""
+        super().__init__(*args, **kwargs)
 
     @property
     def name(self) -> str:
@@ -22,26 +65,6 @@ class MockTask(Task):
 
     def execute(self, Input: Dict[str, Any]) -> TaskResult:
         return TaskResult(input=Input, output="mock_output")
-
-
-@EvaluatorRegistry.register("mock_evaluator")
-class MockEvaluator(BaseEvaluator):
-    """Mock evaluator for testing."""
-
-    def __init__(self, score: float = 1.0, label: str = "mock_label"):
-        super().__init__()
-        self.score = score
-        self.label = label
-
-    @property
-    def name(self) -> str:
-        return "mock_evaluator"
-
-    def evaluate(self, output: Any) -> EvaluationResult:
-        return EvaluationResult(score=self.score, label=self.label)
-
-    def __call__(self, output: Any) -> EvaluationResult:
-        return self.evaluate(output)
 
 
 def test_experiment_to_dict() -> None:
@@ -103,7 +126,7 @@ def test_experiment_to_dict_minimal() -> None:
     }
 
 
-def test_experiment_init() -> None:
+def test_experiment_init(mock_evaluator_class: Type[BaseEvaluator]) -> None:
     """Test experiment initialization."""
     evaluator_configs = [
         {"type": "mock_evaluator", "score": 1.0, "label": "mock_label"},
@@ -118,7 +141,7 @@ def test_experiment_init() -> None:
 
     assert experiment.task is not None
     assert len(experiment.evaluators) == 1
-    assert isinstance(experiment.evaluators[0], MockEvaluator)
+    assert isinstance(experiment.evaluators[0], mock_evaluator_class)
 
 
 def test_experiment_invalid_evaluator_config() -> None:
@@ -136,7 +159,9 @@ def test_experiment_invalid_evaluator_config() -> None:
         )
 
 
-def test_experiment_evaluator_execution() -> None:
+def test_experiment_evaluator_execution(
+    mock_evaluator_class: Type[BaseEvaluator],
+) -> None:
     """Test that configured evaluators work correctly."""
     evaluator_configs = [
         {"type": "mock_evaluator", "score": 0.8, "label": "test_label"},
@@ -151,7 +176,7 @@ def test_experiment_evaluator_execution() -> None:
 
     # Get the configured evaluator
     evaluator = experiment.evaluators[0]
-    assert isinstance(evaluator, MockEvaluator)
+    assert isinstance(evaluator, mock_evaluator_class)
 
     # Test evaluation
     result = evaluator.evaluate("test_output")
@@ -159,7 +184,9 @@ def test_experiment_evaluator_execution() -> None:
     assert result.label == "test_label"
 
 
-def test_experiment_multiple_evaluators() -> None:
+def test_experiment_multiple_evaluators(
+    mock_evaluator_class: Type[BaseEvaluator],
+) -> None:
     """Test experiment with multiple evaluators."""
     evaluator_configs = [
         {"type": "mock_evaluator", "score": 0.8, "label": "evaluator_1"},
@@ -179,7 +206,7 @@ def test_experiment_multiple_evaluators() -> None:
 
     # Verify each evaluator's configuration
     for i, evaluator in enumerate(experiment.evaluators):
-        assert isinstance(evaluator, MockEvaluator)
+        assert isinstance(evaluator, mock_evaluator_class)
         result = evaluator.evaluate("test_output")
         assert result.score == evaluator_configs[i]["score"]
         assert result.label == evaluator_configs[i]["label"]

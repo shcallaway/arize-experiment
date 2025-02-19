@@ -13,6 +13,7 @@ from arize_experiment.core.errors import ConfigurationError, HandlerError
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import Task
+from arize_experiment.core.task_registry import TaskRegistry
 from arize_experiment.evaluators.sentiment_classification_accuracy import (
     SentimentClassificationAccuracyEvaluator,
 )
@@ -253,7 +254,7 @@ class Handler:
     def _create_execute_agent_task(
         self,
     ) -> ExecuteAgentTask:
-        """Create an execute agent task.
+        """Create an execute agent task instance.
 
         Returns:
             ExecuteAgentTask instance
@@ -264,9 +265,8 @@ class Handler:
         try:
             # Get URL from environment variable or use default
             url = os.getenv("AGENT_SERVER_URL", "http://localhost:8080")
-            return ExecuteAgentTask(
-                url=url,
-            )
+            task_class = TaskRegistry.get("execute_agent")
+            return task_class(url=url)  # type: ignore
         except Exception as e:
             raise HandlerError(f"Failed to create execute agent task: {str(e)}")
 
@@ -285,12 +285,16 @@ class Handler:
         Raises:
             HandlerError: If the task cannot be created
         """
-        if task_name == "execute_agent":
-            return self._create_execute_agent_task()
-        elif task_name == "sentiment_classification":
-            return self._create_sentiment_classification_task()
-        else:
-            raise HandlerError(f"Unknown task: {task_name}")
+        try:
+            if task_name == "execute_agent":
+                return self._create_execute_agent_task()
+            elif task_name == "sentiment_classification":
+                return self._create_sentiment_classification_task()
+            else:
+                task_class = TaskRegistry.get(task_name)
+                return task_class()
+        except Exception as e:
+            raise HandlerError(f"Failed to create task {task_name}: {str(e)}")
 
     def _create_sentiment_classification_task(
         self,
@@ -305,7 +309,8 @@ class Handler:
         """
         try:
             api_key = self._get_required_env("OPENAI_API_KEY")
-            return SentimentClassificationTask(
+            task_class = TaskRegistry.get("sentiment_classification")
+            return task_class(  # type: ignore
                 api_key=api_key,
                 model="gpt-4o-mini",
             )

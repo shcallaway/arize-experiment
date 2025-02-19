@@ -7,10 +7,12 @@ import requests
 from requests.exceptions import RequestException
 
 from arize_experiment.core.task import Task, TaskResult
+from arize_experiment.core.task_registry import TaskRegistry
 
 logger = logging.getLogger(__name__)
 
 
+@TaskRegistry.register("execute_agent")
 class ExecuteAgentTask(Task):
     """Execute an agent by calling a web server.
 
@@ -25,6 +27,7 @@ class ExecuteAgentTask(Task):
         Args:
             url: The endpoint URL where the agent is running
         """
+        super().__init__()
         self.url = url
 
     @property

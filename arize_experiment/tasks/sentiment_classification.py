@@ -12,6 +12,7 @@ from openai.types.chat import ChatCompletion
 
 from arize_experiment.core.errors import TaskError
 from arize_experiment.core.task import Task, TaskResult
+from arize_experiment.core.task_registry import TaskRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ You are a sentiment analyzer. Classify the following text as either 'positive',
 """
 
 
+@TaskRegistry.register("sentiment_classification")
 class SentimentClassificationTask(Task):
     """Task for classifying text sentiment using OpenAI's API.
 
@@ -37,12 +39,14 @@ class SentimentClassificationTask(Task):
         """Initialize the sentiment classification task.
 
         Args:
-            model: Name of the OpenAI model to use
-            temperature: Temperature parameter for model inference (0-1)
+            model: The OpenAI model to use
+            temperature: The sampling temperature for the model
             api_key: OpenAI API key (optional if set in environment)
         """
-        self._model = model
-        self._temperature = temperature
+        super().__init__()
+        self.model = model
+        self.temperature = temperature
+        self.api_key = api_key
         self._client = OpenAI(api_key=api_key) if api_key else OpenAI()
 
     @property
@@ -79,8 +83,8 @@ class SentimentClassificationTask(Task):
                     output=None,
                     error="Input must be a dictionary",
                     metadata={
-                        "model": self._model,
-                        "temperature": self._temperature,
+                        "model": self.model,
+                        "temperature": self.temperature,
                     },
                 )
 
@@ -90,8 +94,8 @@ class SentimentClassificationTask(Task):
                     output=None,
                     error="Input must be a dictionary with 'input' key",
                     metadata={
-                        "model": self._model,
-                        "temperature": self._temperature,
+                        "model": self.model,
+                        "temperature": self.temperature,
                     },
                 )
 
@@ -102,15 +106,15 @@ class SentimentClassificationTask(Task):
                     output=None,
                     error="Input must be a string",
                     metadata={
-                        "model": self._model,
-                        "temperature": self._temperature,
+                        "model": self.model,
+                        "temperature": self.temperature,
                     },
                 )
 
             # Call OpenAI API
             response: ChatCompletion = self._client.chat.completions.create(
-                model=self._model,
-                temperature=self._temperature,
+                model=self.model,
+                temperature=self.temperature,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": input},
@@ -128,8 +132,8 @@ class SentimentClassificationTask(Task):
                 input=Input,
                 output=result,
                 metadata={
-                    "model": self._model,
-                    "temperature": self._temperature,
+                    "model": self.model,
+                    "temperature": self.temperature,
                 },
             )
 
@@ -140,8 +144,8 @@ class SentimentClassificationTask(Task):
                 output=None,
                 error=f"Sentiment classification failed: {str(e)}",
                 metadata={
-                    "model": self._model,
-                    "temperature": self._temperature,
+                    "model": self.model,
+                    "temperature": self.temperature,
                 },
             )
 

@@ -42,15 +42,15 @@ def test_task_initialization(mock_openai: Mock) -> None:
     # Test with defaults
     task = SentimentClassificationTask()
     assert task.name == "sentiment_classification"
-    assert task._model == "gpt-4o-mini"
-    assert task._temperature == 0
+    assert task.model == "gpt-4o-mini"
+    assert task.temperature == 0
 
     # Test with custom parameters
     task = SentimentClassificationTask(
         model="gpt-4", temperature=0.7, api_key="test-key"
     )
-    assert task._model == "gpt-4"
-    assert task._temperature == 0.7
+    assert task.model == "gpt-4"
+    assert task.temperature == 0.7
 
 
 @patch("arize_experiment.tasks.sentiment_classification.OpenAI")
@@ -182,8 +182,8 @@ def test_execute_end_to_end(mock_openai: Mock) -> None:
 def test_sentiment_classification_init(mock_openai: Mock) -> None:
     """Test sentiment classification task initialization."""
     task = SentimentClassificationTask()
-    assert task._model == "gpt-4o-mini"
-    assert task._temperature == 0
+    assert task.model == "gpt-4o-mini"
+    assert task.temperature == 0
 
 
 @patch("arize_experiment.tasks.sentiment_classification.OpenAI")
@@ -231,14 +231,14 @@ def test_task_name(mock_openai: Mock) -> None:
 def test_task_model(mock_openai: Mock) -> None:
     """Test the model property."""
     task = SentimentClassificationTask(model="gpt-4")
-    assert task._model == "gpt-4"
+    assert task.model == "gpt-4"
 
 
 @patch("arize_experiment.tasks.sentiment_classification.OpenAI")
 def test_task_temperature(mock_openai: Mock) -> None:
     """Test the temperature property."""
     task = SentimentClassificationTask(temperature=0.7)
-    assert task._temperature == 0.7
+    assert task.temperature == 0.7
 
 
 def test_task_api_key() -> None:

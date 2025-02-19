@@ -54,6 +54,16 @@ class Task(ABC):
     thread-safe where possible.
     """
 
+    @abstractmethod
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the task.
+
+        Args:
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments
+        """
+        pass
+
     @property
     @abstractmethod
     def name(self) -> str:
