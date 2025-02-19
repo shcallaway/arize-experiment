@@ -10,21 +10,18 @@ from typing import Tuple
 import click
 from dotenv import load_dotenv
 
+# Import all evaluators to ensure they are registered
+# TODO(Sherwood): Find a way to get rid of this
+import arize_experiment.evaluators.sentiment_classification_accuracy  # noqa
+import arize_experiment.tasks.execute_agent  # noqa
+
+# Import all tasks to ensure they are registered
+# TODO(Sherwood): Find a way to get rid of this
+import arize_experiment.tasks.sentiment_classification  # noqa
 from arize_experiment.cli.handler import Handler
 from arize_experiment.core.errors import pretty_print_error
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task_registry import TaskRegistry
-
-# Import all evaluators to ensure they are registered
-from arize_experiment.evaluators.sentiment_classification_accuracy import (  # noqa
-    SentimentClassificationAccuracyEvaluator,
-)
-from arize_experiment.tasks.execute_agent import ExecuteAgentTask  # noqa: F401
-
-# Import all tasks to ensure they are registered
-from arize_experiment.tasks.sentiment_classification import (  # noqa: F401
-    SentimentClassificationTask,
-)
 
 logger = logging.getLogger(__name__)
 
