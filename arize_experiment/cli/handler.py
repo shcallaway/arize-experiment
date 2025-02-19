@@ -335,6 +335,8 @@ class Handler:
                 # Create evaluator config
                 config = {
                     "type": name,
+                    # Pass these params to the evaluator constructor,
+                    # regardless of the evaluator type.
                     "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                     "temperature": 0.0,
                     "api_key": os.getenv("OPENAI_API_KEY"),
