@@ -55,6 +55,7 @@ class Handler:
 
         Raises:
             HandlerError: If command execution fails
+            ConfigurationError: If command configuration fails
         """
         # Get Arize values from env
         logger.debug("Creating Arize client configuration")
@@ -81,7 +82,7 @@ class Handler:
             )
 
         # Parse tags
-        parsed_tags = self._parse_tags(raw_tags)
+        parsed_tags = self._parse_raw_tags(raw_tags)
         if parsed_tags:
             logger.info(f"Using tags: {parsed_tags}")
 
@@ -198,7 +199,7 @@ class Handler:
         """
         return self._get_required_env("ARIZE_DEVELOPER_KEY")
 
-    def _parse_tags(self, raw_tags: Optional[List[str]]) -> Optional[Dict[str, str]]:
+    def _parse_raw_tags(self, raw_tags: Optional[List[str]]) -> Optional[Dict[str, str]]:
         """Parse tag strings into a dictionary.
 
         Args:
@@ -208,7 +209,7 @@ class Handler:
             Dictionary of parsed tags or None
 
         Raises:
-            HandlerError: If tag format is invalid
+            ConfigurationError: If tag format is invalid
         """
         if not raw_tags:
             return None
@@ -318,7 +319,7 @@ class Handler:
             List of evaluator instances
 
         Raises:
-            HandlerError: If an evaluator cannot be created
+            ConfigurationError: If an evaluator cannot be created
         """
         if not names:
             return []

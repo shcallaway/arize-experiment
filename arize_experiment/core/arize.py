@@ -44,9 +44,6 @@ class ArizeClient:
 
         Args:
             config: Configuration object containing API credentials
-
-        Raises:
-            ArizeClientError: If client initialization fails
         """
         self._space_id = config.space_id
 
@@ -173,9 +170,6 @@ class ArizeClient:
 
         Returns:
             Experiment information or None if not found
-
-        Raises:
-            ArizeClientError: If experiment retrieval fails
         """
         try:
             logger.debug(

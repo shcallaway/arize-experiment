@@ -1,3 +1,9 @@
+"""Sentiment classification task using OpenAI's API.
+
+This task uses OpenAI's language models to classify text sentiment
+as positive, negative, or neutral.
+"""
+
 from arize_experiment.core.task import Task
 from arize_experiment.core.task import TaskResult
 from arize_experiment.core.errors import TaskError
@@ -15,6 +21,12 @@ or 'neutral'. Respond with just one word.
 
 
 class SentimentClassificationTask(Task):
+    """Task for classifying text sentiment using OpenAI's API.
+    
+    This task uses OpenAI's language models to analyze text and classify
+    its sentiment as either positive, negative, or neutral.
+    """
+
     def __init__(
         self,
         model: str = "gpt-4o-mini",
@@ -25,7 +37,7 @@ class SentimentClassificationTask(Task):
 
         Args:
             model: Name of the OpenAI model to use
-            temperature: Temperature parameter for model inference
+            temperature: Temperature parameter for model inference (0-1)
             api_key: OpenAI API key (optional if set in environment)
         """
         self._model = model
@@ -34,7 +46,11 @@ class SentimentClassificationTask(Task):
 
     @property
     def name(self) -> str:
-        """Get the task name."""
+        """Get the task name.
+        
+        Returns:
+            str: The unique identifier for this task
+        """
         return "sentiment_classification"
 
     def execute(self, Input: Dict[str, Any]) -> TaskResult:
@@ -45,52 +61,52 @@ class SentimentClassificationTask(Task):
 
         Returns:
             TaskResult containing:
-                output: Classification result ('positive', 'negative', or 'neutral')
+                output: The sentiment classification result (positive/negative/neutral)
                 metadata: Processing information including model used
-                error: Any error message if task failed
+                error: Any error message if classification failed
+
+        Raises:
+            TaskError: If the input is invalid or classification fails
         """
         try:
-            logger.info("Executing sentiment classification task")
-            logger.info(f"Input: {Input}")
+            # Extract input from Input.
+            # This is a little confusing, but it is necessary b/c the dataset example
+            # is passed to the execute method as the "Input" param, and this param
+            # contains the entire example in dict format. Within the example dict,
+            # there is an "input" key which contains the text to classify.
+            if not isinstance(Input, dict) or "input" not in Input:
+                raise ValueError("Input must be a dictionary with 'input' key")
 
-            messages = [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    # Get the actual input text from off the input dict.
-                    # This is necessary b/c the input param is actually a dict,
-                    # and the input text is nested inside that dict.
-                    "content": Input["input"],
-                },
-            ]
+            input = Input["input"]
+            if not isinstance(input, str):
+                raise ValueError("Input must be a string")
 
+            # Call OpenAI API
             response: ChatCompletion = self._client.chat.completions.create(
                 model=self._model,
-                messages=messages,
                 temperature=self._temperature,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": input},
+                ],
             )
 
-            logger.info("OpenAI chat completion request successful")
-
-            sentiment = self._parse_llm_output(response.choices[0].message.content)
-
-            # Ensure we only get valid labels
-            if sentiment not in ["positive", "negative", "neutral"]:
-                sentiment = "neutral"
-
-            logger.info(f"Sentiment: {sentiment}")
-            logger.info("Finishing sentiment classification task")
+            # Parse and return result
+            result = self._parse_llm_output(response.choices[0].message.content)
 
             return TaskResult(
                 input=Input,
-                output=sentiment,
+                output=result,
                 metadata={
                     "model": self._model,
+                    "temperature": self._temperature,
                 },
             )
+
         except Exception as e:
             logger.error(f"Sentiment classification failed: {str(e)}")
             return TaskResult(
+                input=Input,
                 output=None,
                 error=f"Sentiment classification failed: {str(e)}",
             )
@@ -105,7 +121,10 @@ class SentimentClassificationTask(Task):
             text: Raw LLM output text
 
         Returns:
-            Classification result
+            str: Classification result (positive/negative/neutral)
+
+        Raises:
+            TaskError: If the output cannot be parsed
         """
         try:
             return text.strip().lower()

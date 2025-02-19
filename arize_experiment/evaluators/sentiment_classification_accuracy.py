@@ -55,7 +55,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         """Get the evaluator name."""
         return "sentiment_classification_accuracy"
 
-    def _parse_output(self, text: str) -> Tuple[bool, str]:
+    def _parse_llm_output(self, text: str) -> Tuple[bool, str]:
         """Parse the LLM output to extract the decision and explanation.
 
         Args:
@@ -63,6 +63,9 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
 
         Returns:
             Tuple of (correct: bool, explanation: str)
+
+        Raises:
+            ValueError: If the output cannot be parsed
         """
         try:
             text = text.strip().lower()
@@ -115,7 +118,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 temperature=self._temperature,
             )
 
-            correct, explanation = self._parse_output(
+            correct, explanation = self._parse_llm_output(
                 response.choices[0].message.content
             )
 
@@ -130,7 +133,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         except Exception as e:
             raise ValueError(f"Sentiment accuracy evaluation failed: {str(e)}")
 
-    def __call__(self, task_result: Any) -> Any:
+    def __call__(self, task_result: Any) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
 
         This allows evaluators to be used directly as functions.
@@ -139,7 +142,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
             task_result: The task result to evaluate
 
         Returns:
-            The evaluation result
+            EvaluationResult: The evaluation result
         """
         # If task_result is a dictionary, convert it to a TaskResult
         if isinstance(task_result, dict):
