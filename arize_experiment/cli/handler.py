@@ -9,9 +9,9 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 import click
 
 from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
-from arize_experiment.core.configurable_evaluator import ConfigurableEvaluator
 from arize_experiment.core.errors import ConfigurationError, HandlerError
 from arize_experiment.core.evaluator import BaseEvaluator
+from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import Task
 from arize_experiment.evaluators.sentiment_classification_accuracy import (
     SentimentClassificationAccuracyEvaluator,
@@ -315,7 +315,7 @@ class Handler:
             )
 
     def _create_evaluators(self, names: Optional[List[str]]) -> Sequence[BaseEvaluator]:
-        """Create evaluator instances.
+        """Create evaluator instances from names.
 
         Args:
             names: List of evaluator names
@@ -329,24 +329,25 @@ class Handler:
         if not names:
             return []
 
-        evaluators: List[BaseEvaluator] = []
+        evaluators = []
         for name in names:
             try:
-                # Create evaluator config
-                config = {
-                    "type": name,
-                    # Pass these params to the evaluator constructor,
-                    # regardless of the evaluator type.
-                    "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                    "temperature": 0.0,
-                    "api_key": os.getenv("OPENAI_API_KEY"),
-                }
+                # Get the evaluator class from the registry
+                evaluator_class = EvaluatorRegistry.get(name)
 
-                # Use the registry system to create the evaluator
-                evaluator = ConfigurableEvaluator.from_config(config)
+                # Initialize with required environment variables if needed
+                if name == "sentiment_classification_accuracy":
+                    api_key = self._get_required_env("OPENAI_API_KEY")
+                    evaluator = evaluator_class(api_key=api_key)
+                else:
+                    evaluator = evaluator_class()
+
                 evaluators.append(evaluator)
-            except ValueError as e:
-                raise HandlerError(f"Failed to create evaluator '{name}': {e}")
+            except Exception as e:
+                raise HandlerError(
+                    f"Failed to create evaluator '{name}'",
+                    details={"error": str(e)},
+                )
 
         return evaluators
 

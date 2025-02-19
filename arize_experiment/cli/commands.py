@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from arize_experiment.cli.handler import Handler
 from arize_experiment.core.errors import pretty_print_error
+from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +72,7 @@ def cli() -> None:
     "-e",
     multiple=True,
     required=True,
-    type=click.Choice(
-        [
-            "sentiment_classification_accuracy",
-        ]
-    ),
+    type=click.Choice(EvaluatorRegistry.list()),
     help="Name of an evaluator to use (can be used multiple times)",
 )
 @click.option(
@@ -97,19 +94,12 @@ def run(
 
     Example:
         $ arize-experiment run \
-            --name my-experiment \
-            --dataset my-dataset \
-            --task sentiment_classification \
-            --evaluator sentiment_classification_accuracy
-
-    Tags can be added using the --tag option multiple times:
-        $ arize-experiment run \
-            -n exp-1 \
-            -d data-1 \
-            -t sentiment_classification \
-            -e sentiment_classification_accuracy \
-            -tag type=test \
-            -tag env=prod
+            --name <experiment-name> \
+            --dataset <dataset-name> \
+            --task <task-name> \
+            --evaluator <evaluator-name> \
+            --tag <tag-key>=<tag-value> \
+            --tag <tag-key>=<tag-value>
 
     Available tasks:
         sentiment_classification: Classifies the sentiment of a text
@@ -119,8 +109,7 @@ def run(
             (default: http://localhost:8080)
 
     Available evaluators:
-        sentiment_classification_accuracy: Evaluates whether the sentiment
-            classification is accurate
+        Run with --help to see the current list of registered evaluators
     """
     try:
         logger.info("Running experiment")
