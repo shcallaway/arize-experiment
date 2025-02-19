@@ -18,6 +18,22 @@ from arize_experiment.core.task_registry import TaskRegistry
 logger = logging.getLogger(__name__)
 
 
+def register_all_evaluators() -> None:
+    """Register all evaluators."""
+    import arize_experiment.evaluators.agent_response_quality  # noqa
+    import arize_experiment.evaluators.sentiment_classification_accuracy  # noqa
+
+
+def register_all_tasks() -> None:
+    """Register all tasks."""
+    import arize_experiment.tasks.execute_agent  # noqa
+    import arize_experiment.tasks.sentiment_classification  # noqa
+
+
+register_all_evaluators()
+register_all_tasks()
+
+
 @click.group()
 def cli() -> None:
     """arize-experiment: A tool for running experiments on Arize.
@@ -130,13 +146,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    # Import all evaluators to ensure they are registered
-    # TODO(Sherwood): Find a way to get rid of this
-    import arize_experiment.evaluators.sentiment_classification_accuracy  # noqa
-
-    # Import all tasks to ensure they are registered
-    # TODO(Sherwood): Find a way to get rid of this
-    import arize_experiment.tasks.execute_agent  # noqa
-    import arize_experiment.tasks.sentiment_classification  # noqa
-
     main()
