@@ -157,3 +157,29 @@ def test_experiment_evaluator_execution() -> None:
     result = evaluator.evaluate("test_output")
     assert result.score == 0.8
     assert result.label == "test_label"
+
+
+def test_experiment_multiple_evaluators() -> None:
+    """Test experiment with multiple evaluators."""
+    evaluator_configs = [
+        {"type": "mock_evaluator", "score": 0.8, "label": "evaluator_1"},
+        {"type": "mock_evaluator", "score": 0.6, "label": "evaluator_2"},
+        {"type": "mock_evaluator", "score": 0.4, "label": "evaluator_3"},
+    ]
+    
+    experiment = Experiment(
+        name="test_experiment",
+        dataset="test_dataset",
+        task=MockTask(),
+        evaluator_configs=evaluator_configs,
+    )
+    
+    # Verify all evaluators are initialized
+    assert len(experiment.evaluators) == 3
+    
+    # Verify each evaluator's configuration
+    for i, evaluator in enumerate(experiment.evaluators):
+        assert isinstance(evaluator, MockEvaluator)
+        result = evaluator.evaluate("test_output")
+        assert result.score == evaluator_configs[i]["score"]
+        assert result.label == evaluator_configs[i]["label"] 
