@@ -2,6 +2,9 @@
 
 from typing import Any
 
+import requests
+from requests.exceptions import RequestException
+
 from arize_experiment.core.task import Task, TaskResult
 
 
@@ -13,7 +16,7 @@ class ExecuteAgentTask(Task):
     provided URL endpoint.
     """
 
-    def __init__(self, url: str):
+    def __init__(self, url: str = "http://localhost:8080"):
         """Initialize the execute agent task.
 
         Args:
@@ -34,11 +37,13 @@ class ExecuteAgentTask(Task):
         """Execute the agent on input text.
 
         Args:
-            Input: Dictionary containing the input data for the task
+            Input: Dictionary containing the input data for the task including:
+                - agent_id: string identifier for the agent
+                - conversation: list of message dictionaries with role and content
 
         Returns:
             TaskResult containing:
-                output: The agent's response (currently unimplemented)
+                output: The agent's response from the server
                 metadata: Processing information including request details
                 error: Any error message if the request or processing failed
 
@@ -53,4 +58,22 @@ class ExecuteAgentTask(Task):
                 error="Input must be a dictionary",
             )
 
-        return TaskResult(input=Input, output=None, metadata={"url": self.url})
+        try:
+            response = requests.post(self.url, json=Input)
+            response.raise_for_status()
+
+            return TaskResult(
+                input=Input,
+                output=response.json(),
+                metadata={
+                    "url": self.url,
+                    "status_code": response.status_code,
+                    "headers": dict(response.headers),
+                },
+            )
+
+        except RequestException as e:
+            error_msg = f"Failed to execute agent request: {str(e)}"
+            return TaskResult(
+                input=Input, output=None, metadata={"url": self.url}, error=error_msg
+            )
