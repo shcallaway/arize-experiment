@@ -1,11 +1,30 @@
 # Arize Experiment
 
-A CLI tool for creating and running experiments on Arize.
+A CLI tool for creating and running experiments to evaluate AI model performance using the Arize platform. This tool allows you to run standardized evaluations of language models and AI agents, collect metrics, and analyze results through Arize's analytics platform.
+
+## Overview
+
+Arize Experiment helps you:
+
+- Run systematic evaluations of AI models
+- Collect standardized metrics across different model versions
+- Track and compare performance across experiments
+- Generate detailed reports and analytics
+
+Currently supported capabilities:
+
+- **Tasks**:
+  - Sentiment Classification: Evaluate text sentiment analysis
+  - Agent Execution: Test and evaluate AI agent performance
+- **Evaluators**:
+  - Sentiment Classification Accuracy: Measure accuracy of sentiment classification
 
 ## Prerequisites
 
 - Python 3.10 (Python 3.11+ not supported due to dependency constraints)
 - pyenv (recommended for Python version management)
+- OpenAI API key (for running LLM-based tasks)
+- Arize account and API credentials
 
 ## pyenv
 
@@ -109,32 +128,144 @@ pip install -e .
 
 ## Configuration
 
-Create a `.env` file by copying the `.env.example` file.
+Create a `.env` file by copying the `.env.example` file:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in the values for the environment variables.
+Required environment variables:
 
-You can find these values in your Arize account settings.
+```bash
+ARIZE_API_KEY=your_arize_api_key
+ARIZE_SPACE_KEY=your_arize_space_key
+
+# Required for certain tasks and evaluators, but not all
+OPENAI_API_KEY=your_openai_api_key
+```
+
+You can find the Arize credentials in your Arize account settings. The OpenAI API key can be obtained from the OpenAI platform.
 
 ## Usage
 
-Run an experiment:
+### Basic Command Structure
 
 ```bash
-arize-experiment run --name my-experiment --dataset my-dataset
+arize-experiment run \
+  --name <experiment-name> \
+  --dataset <dataset-name> \
+  --task <task-name> \
+  --evaluator <evaluator-name>
 ```
 
-Options:
+### Required Flags
 
-- `--name`, `-n`: Experiment name (required)
-- `--dataset`, `-d`: Dataset name (required)
+- `--name`, `-n`: Experiment name
+- `--dataset`, `-d`: Dataset name
+- `--task`, `-t`: Task to execute (see available tasks below)
+- `--evaluator`, `-e`: Evaluator(s) to use (can specify multiple)
+
+### Optional Flags
+
+- `--tag`: Add key=value tags to your experiment (can specify multiple)
+
+### Available Tasks
+
+1. **Sentiment Classification**
+
+   Analyzes text to determine its emotional tone. The task uses OpenAI's models to classify text into three categories: positive, negative, or neutral. Ideal for:
+
+   - Customer feedback analysis
+   - Social media sentiment tracking
+   - Product review evaluation
+
+   Example usage:
+
+   ```bash
+   arize-experiment run \
+     --name sentiment-test \
+     --dataset customer-feedback \
+     --task sentiment_classification \
+     --evaluator sentiment_classification_accuracy
+   ```
+
+2. **Agent Execution**
+
+   Evaluates AI agent performance by running it through predefined scenarios. The task executes the agent with specific inputs and captures its responses for evaluation. Use cases include:
+
+   - Testing chatbot responses
+   - Evaluating task completion capabilities
+   - Assessing decision-making logic
+
+   Example usage:
+
+   ```bash
+   arize-experiment run \
+     --name agent-test \
+     --dataset agent-scenarios \
+     --task execute_agent \
+     --evaluator sentiment_classification_accuracy \
+     --tag model=gpt-4 \
+     --tag temperature=0.7
+   ```
+
+### Evaluators
+
+1. **Sentiment Classification Accuracy**
+
+   Evaluates the performance of sentiment classification tasks by:
+
+   - Calculating overall accuracy scores
+   - Generating confusion matrices
+   - Providing detailed misclassification analysis
+   - Identifying systematic errors and biases
+
+   The evaluator compares model predictions against ground truth labels and generates comprehensive performance metrics that are automatically uploaded to your Arize dashboard.
+
+### Output and Results
+
+Results are automatically uploaded to your Arize space, where you can:
+
+- View detailed metrics and evaluations
+- Compare results across experiments
+- Generate performance reports
+- Analyze model behavior
+
+## Project Structure
+
+```
+arize_experiment/
+├── cli/            # Command-line interface
+├── core/           # Core functionality
+├── evaluators/     # Evaluation implementations
+├── tasks/          # Task implementations
+└── tests/          # Test suite
+```
 
 ## Development
 
-### Code Formatting
+### Setting Up Development Environment
+
+1. Follow the installation steps in the Prerequisites section
+2. Install development dependencies:
+   ```bash
+   pip install -e ".[dev]"
+   ```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest tests/test_specific.py
+
+# Run with coverage
+pytest --cov=arize_experiment
+```
+
+### Code Quality
 
 Format code using Black:
 
@@ -143,25 +274,46 @@ black .          # Format files
 black . --check  # Check formatting
 ```
 
-## Code Linting
-
 Lint code using Flake8:
 
 ```bash
 flake8 .
 ```
 
+### Adding New Components
+
+#### Adding a New Task
+
+1. Create a new file in `arize_experiment/tasks/`
+2. Implement the `Task` interface from `core/task.py`
+3. Register the task in `cli/commands.py`
+
+#### Adding a New Evaluator
+
+1. Create a new file in `arize_experiment/evaluators/`
+2. Implement the evaluation logic
+3. Register the evaluator in `cli/commands.py`
+
 ## Troubleshooting
 
-If Python command is not found after installing with pyenv:
+### Common Issues
 
-```bash
-pyenv rehash
-eval "$(pyenv init -)"
-```
+1. **API Authentication Errors**
 
-If you see "python-build: definition not found":
+   - Verify your API keys in `.env`
+   - Check your Arize account status
+   - Ensure your OpenAI API key has sufficient credits
 
-```bash
-pyenv update
-```
+2. **Python Environment Issues**
+
+   ```bash
+   pyenv rehash
+   eval "$(pyenv init -)"
+   ```
+
+3. **Package Installation Issues**
+
+   ```bash
+   pip install --upgrade pip
+   pip install -e .
+   ```
