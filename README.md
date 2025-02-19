@@ -91,7 +91,10 @@ cp .env.example .env
 # Set required variables in your .env:
 ARIZE_API_KEY=your_arize_api_key
 ARIZE_SPACE_KEY=your_arize_space_key
-OPENAI_API_KEY=your_openai_api_key  # Required for certain tasks/evaluators
+
+# Set optional variables in your .env:
+OPENAI_API_KEY=your_openai_api_key  # Required for some tasks/evaluators
+AGENT_SERVER_URL=http://localhost:8080  # Required for execute_agent task
 ```
 
 ## Usage Guide
@@ -121,9 +124,27 @@ arize-experiment run \
   --evaluator sentiment_classification_accuracy
 ```
 
-#### 2. Agent Execution
+#### 2. Execute Agent
 
-Tests AI agent performance in predefined scenarios.
+Executes an agent by making HTTP requests to a specified endpoint. The agent is expected to be running at the provided URL endpoint (defaults to http://localhost:8080).
+
+Required input format:
+
+```json
+{
+  "agent_id": "unique_agent_identifier",
+  "conversation": [
+    { "role": "user", "content": "Hello" },
+    { "role": "assistant", "content": "Hi there!" },
+    { "role": "user", "content": "What's the weather?" }
+  ]
+}
+```
+
+Configuration:
+
+- Set `AGENT_SERVER_URL` in your .env file or environment to specify the agent endpoint
+- Default URL is http://localhost:8080 if not specified
 
 ```bash
 # Example: Evaluate a task that executes a chatbot
@@ -131,7 +152,7 @@ arize-experiment run \
   --name <your-experiment-name> \
   --dataset <your-dataset-name> \
   --task execute_agent \
-  --evaluator agent_response_quality
+  --evaluator sentiment_classification_accuracy
 ```
 
 ### Working with Datasets

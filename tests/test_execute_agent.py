@@ -1,13 +1,12 @@
 """Tests for the execute agent task."""
 
-from typing import Any, cast
+from typing import Any, Dict, cast
 from unittest.mock import Mock, patch
 
 import pytest
 import requests
 from requests.exceptions import RequestException
 
-from arize_experiment.core.task import TaskResult
 from arize_experiment.tasks.execute_agent import ExecuteAgentTask
 
 
@@ -31,20 +30,6 @@ def test_default_url() -> None:
     assert task.url == "http://localhost:8080"
 
 
-def test_execute_returns_task_result() -> None:
-    """Test that execute returns a TaskResult with the expected structure."""
-    url = "http://localhost:8000/agent"
-    task = ExecuteAgentTask(url=url)
-    input_data = {"prompt": "Hello agent"}
-
-    result = task.execute(input_data)
-
-    assert isinstance(result, TaskResult)
-    assert result.input == input_data
-    assert result.metadata == {"url": url}
-    assert result.output is None  # Currently unimplemented as per the code
-
-
 @pytest.mark.parametrize(
     "input_data",
     [
@@ -52,6 +37,19 @@ def test_execute_returns_task_result() -> None:
         123,
         None,
         [],
+        {},  # Missing required fields
+        {"agent_id": "123"},  # Missing conversation
+        {"conversation": []},  # Missing agent_id
+        {"agent_id": "123", "conversation": "not a list"},  # Invalid conversation type
+        {"agent_id": "123", "conversation": [123]},  # Invalid message type
+        {
+            "agent_id": "123",
+            "conversation": [{"role": "user"}],  # Missing content
+        },
+        {
+            "agent_id": "123",
+            "conversation": [{"content": "hello"}],  # Missing role
+        },
     ],
 )
 def test_execute_invalid_input_format(input_data: object) -> None:
@@ -61,7 +59,8 @@ def test_execute_invalid_input_format(input_data: object) -> None:
 
     assert not result.success
     assert result.error is not None
-    assert "input must be a dictionary" in str(result.error).lower()
+    assert result.output is None
+    assert result.metadata == {"url": task.url}
 
 
 @patch("requests.post")
@@ -95,7 +94,7 @@ def test_successful_request(mock_post: Mock) -> None:
     assert result.output == {"response": "Hello, I can help with that!"}
 
     # Cast metadata to Dict[str, Any] since we know it exists in this success case
-    metadata = cast(dict[str, Any], result.metadata)
+    metadata = cast(Dict[str, Any], result.metadata)
     assert metadata["url"] == task.url
     assert metadata["status_code"] == 200
     assert metadata["headers"] == {"Content-Type": "application/json"}
@@ -144,3 +143,29 @@ def test_http_error_handling(mock_post: Mock) -> None:
     assert result.output is None
     assert "Failed to execute agent request" in str(result.error)
     assert "404 Client Error" in str(result.error)
+    assert result.metadata == {"url": task.url}
+
+
+@patch("requests.post")
+def test_json_decode_error(mock_post: Mock) -> None:
+    """Test handling of invalid JSON response."""
+    # Setup mock to return invalid JSON
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.side_effect = ValueError("Invalid JSON")
+    mock_post.return_value = mock_response
+
+    task = ExecuteAgentTask()
+    input_data = {
+        "agent_id": "123",
+        "conversation": [{"role": "user", "content": "Hello"}],
+    }
+
+    result = task.execute(input_data)
+
+    # Verify error handling
+    assert not result.success
+    assert result.output is None
+    assert "Agent execution failed" in str(result.error)
+    assert "Invalid JSON" in str(result.error)
+    assert result.metadata == {"url": task.url}

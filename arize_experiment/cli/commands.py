@@ -113,7 +113,10 @@ def run(
 
     Available tasks:
         sentiment_classification: Classifies the sentiment of a text
+            Requires OPENAI_API_KEY environment variable
         execute_agent: Executes an agent by calling a web server
+            Optional AGENT_SERVER_URL environment variable\
+            (default: http://localhost:8080)
 
     Available evaluators:
         sentiment_classification_accuracy: Evaluates whether the sentiment

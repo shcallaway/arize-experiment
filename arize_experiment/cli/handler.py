@@ -261,8 +261,10 @@ class Handler:
             HandlerError: If the task cannot be created
         """
         try:
+            # Get URL from environment variable or use default
+            url = os.getenv("AGENT_SERVER_URL", "http://localhost:8080")
             return ExecuteAgentTask(
-                url="http://localhost:8080",
+                url=url,
             )
         except Exception as e:
             raise HandlerError(f"Failed to create execute agent task: {str(e)}")
