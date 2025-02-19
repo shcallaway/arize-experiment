@@ -17,6 +17,7 @@ from openai.types.chat.chat_completion_user_message_param import (
 )
 
 from arize_experiment.core.evaluator import BaseEvaluator
+from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import TaskResult
 
 logger = logging.getLogger(__name__)
@@ -33,11 +34,20 @@ SYSTEM_PROMPT = (
 )
 
 
+@EvaluatorRegistry.register("sentiment_classification_accuracy")
 class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
     """Evaluates the accuracy of sentiment classifications using OpenAI's API.
 
     This evaluator uses GPT-4o-mini to analyze whether a given sentiment
     classification (positive, neutral, negative) is appropriate for input text.
+    
+    Configuration:
+        {
+            "type": "sentiment_classification_accuracy",
+            "model": "gpt-4o-mini",  # optional
+            "temperature": 0.0,  # optional
+            "api_key": "sk-..."  # optional
+        }
     """
 
     def __init__(
@@ -93,16 +103,13 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         """Evaluate whether the sentiment classification is accurate.
 
         Args:
-            output: The sentiment classification (positive/neutral/negative)
+            task_result: The task result containing input text and classification
 
         Returns:
             EvaluationResult containing:
             - score: 1.0 if correct, 0.0 if incorrect
             - label: "correct" or "incorrect"
-            - explanation: Detailed explanation of the accuracy assessment
-
-        Raises:
-            ValueError: If output format is invalid or API call fails
+            - explanation: Human-readable explanation of the decision
         """
         logger.info("Evaluating sentiment classification accuracy")
         logger.debug(f"Task result: {task_result}")
