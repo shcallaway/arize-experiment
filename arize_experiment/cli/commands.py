@@ -10,14 +10,6 @@ from typing import Tuple
 import click
 from dotenv import load_dotenv
 
-# Import all evaluators to ensure they are registered
-# TODO(Sherwood): Find a way to get rid of this
-import arize_experiment.evaluators.sentiment_classification_accuracy  # noqa
-import arize_experiment.tasks.execute_agent  # noqa
-
-# Import all tasks to ensure they are registered
-# TODO(Sherwood): Find a way to get rid of this
-import arize_experiment.tasks.sentiment_classification  # noqa
 from arize_experiment.cli.handler import Handler
 from arize_experiment.core.errors import pretty_print_error
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
@@ -138,4 +130,13 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Import all evaluators to ensure they are registered
+    # TODO(Sherwood): Find a way to get rid of this
+    import arize_experiment.evaluators.sentiment_classification_accuracy  # noqa
+
+    # Import all tasks to ensure they are registered
+    # TODO(Sherwood): Find a way to get rid of this
+    import arize_experiment.tasks.execute_agent  # noqa
+    import arize_experiment.tasks.sentiment_classification  # noqa
+
     main()
