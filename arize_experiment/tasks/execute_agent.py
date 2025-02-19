@@ -1,6 +1,6 @@
 """Execute an agent by calling a web server."""
 
-from typing import Any, Dict
+from typing import Any
 
 from arize_experiment.core.task import Task, TaskResult
 
@@ -30,7 +30,7 @@ class ExecuteAgentTask(Task):
         """
         return "execute_agent"
 
-    def execute(self, Input: Dict[str, Any]) -> TaskResult:
+    def execute(self, Input: Any) -> TaskResult:
         """Execute the agent on input text.
 
         Args:
@@ -45,4 +45,12 @@ class ExecuteAgentTask(Task):
         Raises:
             TaskError: If the HTTP request fails or agent processing fails
         """
+        if not isinstance(Input, dict):
+            return TaskResult(
+                input=Input,
+                output=None,
+                metadata={"url": self.url},
+                error="Input must be a dictionary",
+            )
+
         return TaskResult(input=Input, output=None, metadata={"url": self.url})
