@@ -56,8 +56,15 @@ class MockTask(Task):
     """Mock task for testing."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the mock task."""
-        super().__init__(*args, **kwargs)
+        """Initialize the mock task.
+
+        Args:
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments
+        """
+        # No need to call super().__init__() since we're implementing
+        # the abstract method
+        pass
 
     @property
     def name(self) -> str:

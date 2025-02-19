@@ -133,7 +133,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
         logger.debug(f"Task result: {task_result}")
 
         # Extract conversation context and response from task result
-        conversation_context = task_result.input.get("conversation", [])
+        conversation_context = task_result.input
         agent_response = task_result.output
 
         if not conversation_context or not agent_response:

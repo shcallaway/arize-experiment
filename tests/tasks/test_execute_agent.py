@@ -33,26 +33,19 @@ def test_default_url() -> None:
 @pytest.mark.parametrize(
     "input_data",
     [
-        "not a dict",
-        123,
-        None,
-        [],
-        {},  # Missing required fields
-        {"agent_id": "123"},  # Missing conversation
-        {"conversation": []},  # Missing agent_id
-        {"agent_id": "123", "conversation": "not a list"},  # Invalid conversation type
-        {"agent_id": "123", "conversation": [123]},  # Invalid message type
+        {"messages": "not a list"},
+        {"messages": 123},
+        {"messages": None},
+        {"messages": {}},
+        {"messages": [123]},  # Invalid message type
+        {"messages": [{"role": "user"}]},  # Missing content
+        {"messages": [{"content": "hello"}]},  # Missing role
         {
-            "agent_id": "123",
-            "conversation": [{"role": "user"}],  # Missing content
-        },
-        {
-            "agent_id": "123",
-            "conversation": [{"content": "hello"}],  # Missing role
-        },
+            "messages": [{"role": "user", "content": "hello"}, "not a dict"]
+        },  # Invalid message in list
     ],
 )
-def test_execute_invalid_input_format(input_data: object) -> None:
+def test_execute_invalid_input_format(input_data: Dict[str, Any]) -> None:
     """Test task execution with invalid input formats."""
     task = ExecuteAgentTask(url="http://test.com")
     result = task.execute(input_data)
@@ -74,19 +67,19 @@ def test_successful_request(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    input_data = {
-        "agent_id": "123",
-        "conversation": [
-            {"role": "user", "content": "Hello, how are you?"},
-            {"role": "assistant", "content": "I'm doing well, thank you!"},
-            {"role": "user", "content": "What is the weather in Tokyo?"},
-        ],
-    }
+    messages = [
+        {"role": "user", "content": "Hello, how are you?"},
+        {"role": "assistant", "content": "I'm doing well, thank you!"},
+        {"role": "user", "content": "What is the weather in Tokyo?"},
+    ]
+    input_data = {"messages": messages}
+
+    expected_payload = {"agent_id": "test", "conversation": messages}
 
     result = task.execute(input_data)
 
     # Verify the request was made correctly
-    mock_post.assert_called_once_with(task.url, json=input_data)
+    mock_post.assert_called_once_with(task.url, json=expected_payload)
 
     # Verify the response was processed correctly
     assert result.success
@@ -107,10 +100,7 @@ def test_request_error_handling(mock_post: Mock) -> None:
     mock_post.side_effect = RequestException("Connection error")
 
     task = ExecuteAgentTask()
-    input_data = {
-        "agent_id": "123",
-        "conversation": [{"role": "user", "content": "Hello"}],
-    }
+    input_data = {"messages": [{"role": "user", "content": "Hello"}]}
 
     result = task.execute(input_data)
 
@@ -131,10 +121,7 @@ def test_http_error_handling(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    input_data = {
-        "agent_id": "123",
-        "conversation": [{"role": "user", "content": "Hello"}],
-    }
+    input_data = {"messages": [{"role": "user", "content": "Hello"}]}
 
     result = task.execute(input_data)
 
@@ -156,10 +143,7 @@ def test_json_decode_error(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    input_data = {
-        "agent_id": "123",
-        "conversation": [{"role": "user", "content": "Hello"}],
-    }
+    input_data = {"messages": [{"role": "user", "content": "Hello"}]}
 
     result = task.execute(input_data)
 

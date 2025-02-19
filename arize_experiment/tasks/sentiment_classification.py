@@ -5,7 +5,7 @@ as positive, negative, or neutral.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
@@ -32,18 +32,21 @@ class SentimentClassificationTask(Task):
 
     def __init__(
         self,
+        *args: Any,
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         api_key: Optional[str] = None,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """Initialize the sentiment classification task.
 
         Args:
             model: The OpenAI model to use
             temperature: The sampling temperature for the model
             api_key: OpenAI API key (optional if set in environment)
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments
         """
-        super().__init__()
         self.model = model
         self.temperature = temperature
         self.api_key = api_key
@@ -58,7 +61,7 @@ class SentimentClassificationTask(Task):
         """
         return "sentiment_classification"
 
-    def execute(self, Input: Any) -> TaskResult:
+    def execute(self, Input: Dict[str, Any]) -> TaskResult:
         """Execute the sentiment classification task.
 
         Args:
@@ -77,17 +80,6 @@ class SentimentClassificationTask(Task):
             # is passed to the execute method as the "Input" param, and this param
             # contains the entire example in dict format. Within the example dict,
             # there is an "input" key which contains the text to classify.
-            if not isinstance(Input, dict):
-                return TaskResult(
-                    input=Input,
-                    output=None,
-                    error="Input must be a dictionary",
-                    metadata={
-                        "model": self.model,
-                        "temperature": self.temperature,
-                    },
-                )
-
             if "input" not in Input:
                 return TaskResult(
                     input=Input,
