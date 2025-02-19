@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from arize_experiment.cli.handler import Handler
 from arize_experiment.core.errors import pretty_print_error
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
+from arize_experiment.core.task_registry import TaskRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,13 @@ def cli() -> None:
     logger.debug("CLI initialized with log level: %s", log_level)
 
 
-@cli.command()
+@cli.command(
+    help="""Run an experiment on Arize.
+
+This command creates and runs a new experiment on the Arize platform
+using the specified dataset, task, and evaluator(s). The experiment
+results can be viewed in the Arize web dashboard."""
+)
 @click.option(
     "--name",
     "-n",
@@ -59,12 +66,7 @@ def cli() -> None:
     "--task",
     "-t",
     required=True,
-    type=click.Choice(
-        [
-            "sentiment_classification",
-            "execute_agent",
-        ]
-    ),
+    type=click.Choice(TaskRegistry.list()),
     help="Name of the task to use",
 )
 @click.option(
@@ -89,27 +91,12 @@ def run(
 ) -> None:
     """Run an experiment on Arize.
 
-    This command creates and runs a new experiment on the Arize platform
-    using the specified dataset.
-
-    Example:
-        $ arize-experiment run \
-            --name <experiment-name> \
-            --dataset <dataset-name> \
-            --task <task-name> \
-            --evaluator <evaluator-name> \
-            --tag <tag-key>=<tag-value> \
-            --tag <tag-key>=<tag-value>
-
-    Available tasks:
-        sentiment_classification: Classifies the sentiment of a text
-            Requires OPENAI_API_KEY environment variable
-        execute_agent: Executes an agent by calling a web server
-            Optional AGENT_SERVER_URL environment variable\
-            (default: http://localhost:8080)
-
-    Available evaluators:
-        Run with --help to see the current list of registered evaluators
+    Args:
+        name: Name of the experiment to create
+        dataset: Name of the dataset to use
+        task: Name of the task to use
+        tag: Optional tags in key=value format
+        evaluator: Name of an evaluator to use
     """
     try:
         logger.info("Running experiment")
