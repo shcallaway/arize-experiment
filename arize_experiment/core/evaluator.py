@@ -114,8 +114,9 @@ class BaseEvaluator(ABC):
         """Evaluate the given output and return a standardized result.
 
         Args:
-            output: The output to evaluate. Evaluators should document
-                   their expected input types and formats in their implementation.
+            output: TaskResult containing the task execution result with input,
+                   output, metadata and any error information. Evaluators should
+                   document their expected TaskResult structure in their implementation.
 
         Returns:
             EvaluationResult containing:
@@ -137,8 +138,9 @@ class BaseEvaluator(ABC):
         This allows evaluators to be used directly as functions.
 
         Args:
-            output: The output to evaluate. Should match the format expected
-                   by the evaluate method.
+            output: TaskResult containing the task execution result with input,
+                   output, metadata and any error information. Evaluators should
+                   document their expected TaskResult structure in their implementation.
 
         Returns:
             EvaluationResult: The evaluation result
