@@ -38,16 +38,38 @@ SYSTEM_PROMPT = (
 class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
     """Evaluates the accuracy of sentiment classifications using OpenAI's API.
 
-    This evaluator uses GPT-4o-mini to analyze whether a given sentiment
-    classification (positive, neutral, negative) is appropriate for input text.
+    This evaluator uses OpenAI's language models to assess the accuracy of
+    sentiment classifications by comparing the model's output against ground
+    truth labels. It provides both a binary accuracy score and detailed
+    explanations for each evaluation.
 
-    Configuration:
-        {
-            "type": "sentiment_classification_accuracy",
-            "model": "gpt-4o-mini",  # optional
-            "temperature": 0.0,  # optional
-            "api_key": "sk-..."  # optional
-        }
+    The evaluator:
+    1. Takes a predicted sentiment and ground truth label
+    2. Uses an LLM to assess if they match semantically
+    3. Provides an explanation for the assessment
+    4. Returns a structured evaluation result
+
+    Attributes:
+        model (str): The OpenAI model to use for evaluation
+        temperature (float): The sampling temperature for generation
+        api_key (Optional[str]): OpenAI API key if not set in environment
+        _client (OpenAI): OpenAI client instance
+
+    Example:
+        ```python
+        evaluator = SentimentClassificationAccuracyEvaluator()
+        result = evaluator.evaluate({
+            "prediction": "positive",
+            "ground_truth": "positive"
+        })
+        # result.passed would be True
+        # result.metadata would include explanation
+        ```
+
+    Note:
+        The evaluator uses a semantic comparison approach rather than exact
+        string matching to handle cases where different words might express
+        the same sentiment (e.g., "positive" vs "good").
     """
 
     def __init__(

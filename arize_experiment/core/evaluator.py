@@ -4,6 +4,34 @@ Core evaluator interface and result types for arize-experiment.
 This module defines the base evaluator interface that all evaluators must
 implement. Evaluators are responsible for assessing the quality or performance
 of task outputs against some criteria.
+
+The evaluator framework is designed to be:
+1. Extensible - New evaluators can be easily added
+2. Composable - Multiple evaluators can be used together
+3. Consistent - All evaluators follow the same interface
+4. Reusable - Evaluators can be used across different tasks
+
+Example:
+    ```python
+    from arize_experiment.core.evaluator import BaseEvaluator
+    from arize.experimental.datasets.experiments.types import EvaluationResult
+
+    class AccuracyEvaluator(BaseEvaluator):
+        def __init__(self, threshold: float = 0.8):
+            self.threshold = threshold
+
+        @property
+        def name(self) -> str:
+            return "accuracy_evaluator"
+
+        def evaluate(self, result: Any) -> EvaluationResult:
+            accuracy = self._calculate_accuracy(result)
+            return EvaluationResult(
+                score=accuracy,
+                passed=accuracy >= self.threshold,
+                metadata={"threshold": self.threshold}
+            )
+    ```
 """
 
 from abc import ABC, abstractmethod
@@ -23,6 +51,16 @@ class BaseEvaluator(ABC):
     1. Taking a task output
     2. Assessing its quality or performance
     3. Returning a standardized evaluation result
+
+    Implementation Guidelines:
+        1. Evaluators should be stateless where possible
+        2. Configuration should be done in __init__
+        3. The evaluate method should handle all error cases
+        4. Results should be returned in an EvaluationResult object
+        5. Metadata should include any relevant configuration
+
+    Attributes:
+        name (str): The unique identifier for this evaluator
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

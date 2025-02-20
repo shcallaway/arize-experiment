@@ -6,7 +6,21 @@ from typing import Any, Dict, List, Optional, cast
 
 
 class DataType(Enum):
-    """Supported data types for schema validation."""
+    """Supported data types for schema validation.
+
+    This enum defines the valid data types that can be used in dataset schemas.
+    Each type corresponds to a Python type and is used for validating data
+    before task execution.
+
+    Attributes:
+        STRING: String data type (str)
+        INTEGER: Integer data type (int)
+        FLOAT: Floating point data type (float)
+        BOOLEAN: Boolean data type (bool)
+        LIST: List data type (list)
+        DICT: Dictionary data type (dict)
+        NULL: Null/None data type
+    """
 
     STRING = "string"
     INTEGER = "integer"
@@ -29,7 +43,40 @@ class ValidationError:
 
 @dataclass
 class ColumnSchema:
-    """Schema definition for a single column or nested field."""
+    """Schema definition for a single column or nested field.
+
+    This class defines the schema for a single column in a dataset, including
+    its name, allowed data types, and whether it's required. It also supports
+    nested schemas for complex data types like dictionaries and lists.
+
+    Attributes:
+        name (str): The name of the column
+        types (List[DataType]): List of allowed data types for this column
+        required (bool): Whether this column is required (default: True)
+        nested_schema (Optional[Dict[str, ColumnSchema]]): Schema for nested fields
+        description (Optional[str]): Human-readable description of the column
+
+    Example:
+        ```python
+        # Simple string column
+        name_schema = ColumnSchema(
+            name="name",
+            types=[DataType.STRING],
+            required=True,
+            description="User's full name"
+        )
+
+        # Nested dictionary column
+        address_schema = ColumnSchema(
+            name="address",
+            types=[DataType.DICT],
+            nested_schema={
+                "street": ColumnSchema(name="street", types=[DataType.STRING]),
+                "city": ColumnSchema(name="city", types=[DataType.STRING])
+            }
+        )
+        ```
+    """
 
     name: str
     types: List[DataType]  # Supports union types

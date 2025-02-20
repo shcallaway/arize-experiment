@@ -53,6 +53,54 @@ class Task(ABC):
     A task represents a discrete unit of work that can be executed with
     some input data and produces a result. Tasks should be stateless and
     thread-safe where possible.
+
+    Implementation Guidelines:
+        1. Tasks should be stateless to ensure thread safety
+        2. All configuration should be done in __init__
+        3. The execute method should handle all error cases gracefully
+        4. Input validation should be done using the required_schema
+        5. Results should be returned in a TaskResult object
+
+    Example:
+        ```python
+        from arize_experiment.core.task import Task
+        from arize_experiment.core.schema import DatasetSchema, ColumnSchema, DataType
+
+        class MyTask(Task):
+            def __init__(self, param1: str = "default") -> None:
+                self.param1 = param1
+
+            @property
+            def name(self) -> str:
+                return "my_task"
+
+            @property
+            def required_schema(self) -> DatasetSchema:
+                return DatasetSchema(
+                    columns={
+                        "input": ColumnSchema(
+                            name="input",
+                            types=[DataType.STRING],
+                            required=True
+                        )
+                    }
+                )
+
+            def execute(self, Input: Dict[str, Any]) -> TaskResult:
+                try:
+                    result = self._process_input(Input["input"])
+                    return TaskResult(
+                        input=Input,
+                        output=result,
+                        metadata={"param1": self.param1}
+                    )
+                except Exception as e:
+                    return TaskResult(
+                        input=Input,
+                        output=None,
+                        error=str(e)
+                    )
+        ```
     """
 
     @abstractmethod

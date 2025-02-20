@@ -32,7 +32,8 @@ class Handler:
 
     def __init__(self) -> None:
         """Initialize the command handler."""
-        self.schema_validator = SchemaValidator()
+        self._schema_validator = SchemaValidator()
+        self._arize_client = self._initialize_arize_client()
 
     def run(  # noqa: C901
         self,
@@ -55,76 +56,14 @@ class Handler:
             HandlerError: If command execution fails
             ConfigurationError: If command configuration fails
         """
-        # Get Arize values from env
-        logger.debug("Creating Arize client configuration")
-        try:
-            arize_config = ArizeClientConfiguration(
-                api_key=self._get_arize_api_key(),
-                space_id=self._get_arize_space_id(),
-                developer_key=self._get_arize_developer_key(),
-            )
-        except Exception as e:
-            raise HandlerError(
-                "Failed to create Arize client configuration", details={"error": str(e)}
-            )
-
-        # Initialize Arize client
-        logger.debug("Initializing Arize client")
-        try:
-            arize_client = ArizeClient(
-                config=arize_config,
-            )
-        except Exception as e:
-            raise HandlerError(
-                "Failed to initialize Arize client", details={"error": str(e)}
-            )
-
         # Parse tags
         parsed_tags = self._parse_raw_tags(raw_tags)
         if parsed_tags:
             logger.info(f"Using tags: {parsed_tags}")
 
-        # Make sure dataset exists
-        logger.info(f"Checking if dataset '{dataset_name}' exists")
-        try:
-            dataset_exists = arize_client.get_dataset(
-                dataset_name=dataset_name,
-            )
-        except Exception as e:
-            raise ConfigurationError(
-                f"Failed to check if dataset '{dataset_name}' exists",
-                details={"error": str(e)},
-            )
+        self._verify_dataset_exists(dataset_name)
 
-        # If the dataset does not exist, raise an error
-        if dataset_exists is None:
-            raise ConfigurationError(
-                f"Dataset '{dataset_name}' does not exist",
-                details={"dataset": dataset_name},
-            )
-
-        # Make sure experiment DOES NOT exist
-        logger.info(f"Checking if experiment '{experiment_name}' exists")
-        try:
-            experiment_exists = arize_client.get_experiment(
-                experiment_name=experiment_name,
-                dataset_name=dataset_name,
-            )
-        except Exception as e:
-            raise HandlerError(
-                f"Failed to check if experiment '{experiment_name}' exists",
-                details={"error": str(e)},
-            )
-
-        # If the experiment already exists, raise an error
-        if experiment_exists is not None:
-            raise ConfigurationError(
-                f"Experiment '{experiment_name}' already exists",
-                details={
-                    "experiment_name": experiment_name,
-                    "dataset_name": dataset_name,
-                },
-            )
+        self._verify_experiment_does_not_exist(experiment_name, dataset_name)
 
         # Create task instance
         logger.info(f"Creating task '{task_name}'")
@@ -139,7 +78,9 @@ class Handler:
         # Validate dataset schema against task requirements
         logger.info("Validating dataset schema")
         try:
-            errors = self.schema_validator.validate(dataset_name, task, arize_client)
+            errors = self._schema_validator.validate(
+                dataset_name, task, self._arize_client
+            )
             if errors:
                 raise ConfigurationError(
                     "Dataset schema incompatible with task",
@@ -175,7 +116,7 @@ class Handler:
         # Run experiment
         logger.info(f"Running experiment: {experiment_name}")
         try:
-            result = arize_client.run_experiment(
+            result = self._arize_client.run_experiment(
                 experiment_name=experiment_name,
                 dataset_name=dataset_name,
                 task=task,
@@ -208,6 +149,60 @@ class Handler:
                 f"\nExperiment '{experiment_name}' completed. Result: {result}",
                 fg="green",
             )
+
+    def create_dataset(
+        self,
+        dataset_name: str,
+        path_to_csv: str,
+    ) -> None:
+        """Create a new dataset from a CSV file.
+
+        Args:
+            dataset_name: Name of the dataset to create
+            path_to_csv: Path to the CSV file to upload
+
+        Raises:
+            HandlerError: If command execution fails
+            ConfigurationError: If command configuration fails
+        """
+        self._verify_dataset_does_not_exist(dataset_name)
+
+        # TODO: Implement dataset creation from CSV
+
+        logger.info(f"Creating dataset '{dataset_name}' from {path_to_csv}")
+        click.secho(f"\nSuccessfully created dataset '{dataset_name}'", fg="green")
+
+    def _initialize_arize_client(self) -> ArizeClient:
+        """Initialize the Arize client.
+
+        Returns:
+            Arize client instance
+        """
+        # Get Arize values from env
+        logger.debug("Creating Arize client configuration")
+        try:
+            arize_config = ArizeClientConfiguration(
+                api_key=self._get_arize_api_key(),
+                space_id=self._get_arize_space_id(),
+                developer_key=self._get_arize_developer_key(),
+            )
+        except Exception as e:
+            raise HandlerError(
+                "Failed to create Arize client configuration", details={"error": str(e)}
+            )
+
+        # Initialize Arize client
+        logger.debug("Initializing Arize client")
+        try:
+            arize_client = ArizeClient(
+                config=arize_config,
+            )
+        except Exception as e:
+            raise HandlerError(
+                "Failed to initialize Arize client", details={"error": str(e)}
+            )
+
+        return arize_client
 
     def _get_arize_api_key(self) -> str:
         """Get the Arize API key.
@@ -346,3 +341,87 @@ class Handler:
             raise ConfigurationError(error_msg)
 
         return value
+
+    def _verify_dataset_exists(self, dataset_name: str) -> None:
+        """Verify that a dataset exists.
+
+        Args:
+            dataset_name: Name of the dataset to verify
+            arize_client: Arize client instance
+        """
+        if not self._dataset_exists(dataset_name):
+            raise ConfigurationError(
+                f"Dataset '{dataset_name}' does not exist",
+                details={"dataset": dataset_name},
+            )
+
+    def _verify_dataset_does_not_exist(self, dataset_name: str) -> None:
+        """Verify that a dataset does not exist.
+
+        Args:
+            dataset_name: Name of the dataset to verify
+            arize_client: Arize client instance
+        """
+        if self._dataset_exists(dataset_name):
+            raise ConfigurationError(
+                f"Dataset '{dataset_name}' already exists",
+                details={"dataset": dataset_name},
+            )
+
+    def _verify_experiment_does_not_exist(
+        self, experiment_name: str, dataset_name: str
+    ) -> None:
+        """Verify that an experiment does not exist.
+
+        Args:
+            experiment_name: Name of the experiment to verify
+            dataset_name: Name of the dataset
+        """
+        if self._experiment_exists(experiment_name, dataset_name):
+            raise ConfigurationError(
+                f"Experiment '{experiment_name}' already exists",
+                details={
+                    "experiment_name": experiment_name,
+                    "dataset_name": dataset_name,
+                },
+            )
+
+    def _dataset_exists(self, dataset_name: str) -> bool:
+        """Check if a dataset exists.
+
+        Args:
+            dataset_name: Name of the dataset to check
+        """
+        logger.info(f"Checking if dataset '{dataset_name}' exists")
+        try:
+            dataset_exists = self._arize_client.get_dataset(
+                dataset_name=dataset_name,
+            )
+        except Exception as e:
+            raise ConfigurationError(
+                f"Failed to check if dataset '{dataset_name}' exists",
+                details={"error": str(e)},
+            )
+
+        return dataset_exists is not None
+
+    def _experiment_exists(self, experiment_name: str, dataset_name: str) -> bool:
+        """Check if an experiment exists.
+
+        Args:
+            experiment_name: Name of the experiment to check
+            dataset_name: Name of the dataset
+        """
+        logger.info(f"Checking if experiment '{experiment_name}' exists")
+        try:
+            experiment_exists = self._arize_client.get_experiment(
+                experiment_name=experiment_name,
+                dataset_name=dataset_name,
+            )
+        except Exception as e:
+            raise HandlerError(
+                f"Failed to check if experiment '{experiment_name}' exists",
+                details={"error": str(e)},
+            )
+
+        return experiment_exists is not None

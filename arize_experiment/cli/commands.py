@@ -136,6 +136,46 @@ def run(
         sys.exit(1)
 
 
+@cli.command(
+    help="""Create a new dataset from a CSV file.
+
+This command creates a new dataset on the Arize platform from a local CSV file."""
+)
+@click.option(
+    "--name",
+    "-n",
+    required=True,
+    help="Name of the dataset to create",
+)
+@click.option(
+    "--path-to-csv",
+    required=True,
+    help="Path to the CSV file to upload",
+)
+def create_dataset(name: str, path_to_csv: str) -> None:
+    """Create a new dataset from a CSV file.
+
+    Args:
+        name: Name of the dataset to create
+        path_to_csv: Path to the CSV file to upload
+    """
+    try:
+        logger.info("Creating dataset")
+
+        # Initialize the command handler
+        handler = Handler()
+
+        # Create the dataset
+        handler.create_dataset(
+            dataset_name=name,
+            path_to_csv=path_to_csv,
+        )
+    except Exception as e:
+        error_msg = pretty_print_error(e)
+        click.secho(f"\nError: {error_msg}", fg="red", err=True)
+        sys.exit(1)
+
+
 def main() -> None:
     """Main entry point for the CLI."""
     try:

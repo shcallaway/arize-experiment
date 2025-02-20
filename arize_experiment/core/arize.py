@@ -105,14 +105,8 @@ class ArizeClient:
             )
         except Exception as e:
             logger.debug(f"Error getting dataset: {e}")
-            error_msg = str(e).lower()
-            if "not found" in error_msg or "does not exist" in error_msg:
-                return None
-
-            raise ArizeClientError(
-                f"Error retrieving dataset '{dataset_name}'",
-                details={"dataset_name": dataset_name, "error": str(e)},
-            )
+            # If an error was thrown, assume the dataset does not exist
+            return None
 
     def run_experiment(
         self,

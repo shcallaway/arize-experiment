@@ -39,19 +39,77 @@ class ArizeClientError(ArizeExperimentError):
 
 
 class ConfigurationError(ArizeExperimentError):
-    """Error related to configuration issues."""
+    """Error related to configuration issues.
+
+    This error is raised when there are problems with the configuration
+    of tasks, evaluators, or the framework itself. Common cases include:
+    - Missing required environment variables
+    - Invalid configuration file format
+    - Invalid parameter values
+    - Missing required configuration options
+
+    Example:
+        ```python
+        if not config.get("api_key"):
+            raise ConfigurationError("API key is required in configuration")
+        ```
+    """
 
 
 class HandlerError(ArizeExperimentError):
-    """Error related to command handling issues."""
+    """Error related to command handling issues.
+
+    This error is raised when there are problems executing CLI commands
+    or handling user input. Common cases include:
+    - Invalid command syntax
+    - Missing required arguments
+    - Failed task or evaluator creation
+    - Invalid file paths or formats
+
+    Example:
+        ```python
+        if not os.path.exists(input_path):
+            raise HandlerError(f"Input file not found: {input_path}")
+        ```
+    """
 
 
 class EvaluatorError(ArizeExperimentError):
-    """Error related to evaluator issues."""
+    """Error related to evaluator issues.
+
+    This error is raised when there are problems during evaluation
+    execution. Common cases include:
+    - Invalid evaluation input format
+    - Failed metric calculation
+    - Missing ground truth data
+    - Evaluation timeout or resource limits
+
+    Example:
+        ```python
+        if not isinstance(predictions, list):
+            raise EvaluatorError("Predictions must be a list")
+        ```
+    """
 
 
 class TaskError(ArizeExperimentError):
-    """Error related to task issues."""
+    """Error related to task issues.
+
+    This error is raised when there are problems during task
+    execution. Common cases include:
+    - Invalid input data format
+    - Failed API calls or external service errors
+    - Resource constraints or timeouts
+    - Internal processing errors
+
+    Example:
+        ```python
+        try:
+            response = api.process(input_data)
+        except ApiError as e:
+            raise TaskError(f"API call failed: {str(e)}")
+        ```
+    """
 
 
 def pretty_print_error(error: Exception) -> str:

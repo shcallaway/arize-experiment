@@ -1,7 +1,27 @@
 """Sentiment classification task using OpenAI's API.
 
 This task uses OpenAI's language models to classify text sentiment
-as positive, negative, or neutral.
+as positive, negative, or neutral. The task leverages OpenAI's
+advanced language understanding capabilities to provide accurate
+sentiment analysis.
+
+Example:
+    ```python
+    from arize_experiment.core.task_registry import TaskRegistry
+
+    # Create task instance
+    task = TaskRegistry.get("sentiment_classification")()
+
+    # Classify sentiment
+    result = task.execute({
+        "input": "I really enjoyed this product!"
+    })
+    # result.output would be "positive"
+    ```
+
+Note:
+    This task requires an OpenAI API key to be set either in the
+    environment variables or passed during initialization.
 """
 
 import logging
@@ -28,7 +48,25 @@ class SentimentClassificationTask(Task):
     """Task for classifying text sentiment using OpenAI's API.
 
     This task uses OpenAI's language models to analyze text and classify
-    its sentiment as either positive, negative, or neutral.
+    its sentiment as either positive, negative, or neutral. The task uses
+    a simple prompt-based approach, instructing the model to respond with
+    a single word classification.
+
+    The task is designed to:
+    1. Be simple and straightforward to use
+    2. Provide consistent results
+    3. Handle various text inputs gracefully
+    4. Return clear, categorical classifications
+
+    Attributes:
+        model (str): The OpenAI model to use for classification
+        temperature (float): The sampling temperature for generation
+        api_key (Optional[str]): OpenAI API key if not set in environment
+        _client (OpenAI): OpenAI client instance
+
+    Note:
+        The task uses a zero temperature by default to ensure consistent
+        results, but this can be adjusted if more variation is desired.
     """
 
     def __init__(

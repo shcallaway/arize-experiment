@@ -2,7 +2,21 @@
 Core evaluator registry for managing and accessing evaluators.
 
 This module provides a central registry for evaluators, allowing dynamic
-registration and retrieval of evaluator classes.
+registration and retrieval of evaluator classes. It implements a singleton pattern
+to ensure a single source of truth for evaluator registration across the application.
+
+Example:
+    ```python
+    from arize_experiment.core.evaluator_registry import EvaluatorRegistry
+
+    # Register an evaluator
+    @EvaluatorRegistry.register("my_evaluator")
+    class MyEvaluator(BaseEvaluator):
+        pass
+
+    # Get a registered evaluator
+    evaluator_class = EvaluatorRegistry.get("my_evaluator")
+    ```
 """
 
 from typing import Callable, Dict, List, Type
@@ -15,7 +29,12 @@ class EvaluatorRegistry:
 
     This class provides class methods for registering, retrieving, and listing
     available evaluators. It acts as a singleton registry accessible throughout
-    the application.
+    the application. The registry maintains a mapping of evaluator names to their
+    corresponding evaluator classes.
+
+    Attributes:
+        _evaluators (Dict[str, Type[BaseEvaluator]]): Internal dictionary
+            storing registered evaluators
     """
 
     _evaluators: Dict[str, Type[BaseEvaluator]] = {}

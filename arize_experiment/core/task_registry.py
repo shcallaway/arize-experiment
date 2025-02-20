@@ -2,7 +2,21 @@
 Core task registry for managing and accessing tasks.
 
 This module provides a central registry for tasks, allowing dynamic
-registration and retrieval of task classes.
+registration and retrieval of task classes. It implements a singleton pattern
+to ensure a single source of truth for task registration across the application.
+
+Example:
+    ```python
+    from arize_experiment.core.task_registry import TaskRegistry
+
+    # Register a task
+    @TaskRegistry.register("my_task")
+    class MyTask(Task):
+        pass
+
+    # Get a registered task
+    task_class = TaskRegistry.get("my_task")
+    ```
 """
 
 from typing import Callable, Dict, List, Type
@@ -15,7 +29,11 @@ class TaskRegistry:
 
     This class provides class methods for registering, retrieving, and listing
     available tasks. It acts as a singleton registry accessible throughout
-    the application.
+    the application. The registry maintains a mapping of task names to their
+    corresponding task classes.
+
+    Attributes:
+        _tasks (Dict[str, Type[Task]]): Internal dictionary storing registered tasks
     """
 
     _tasks: Dict[str, Type[Task]] = {}
