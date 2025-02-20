@@ -2,6 +2,7 @@
 Evaluator for judging the quality of agent responses using OpenAI's API.
 """
 
+import json
 import logging
 from typing import Any, List, Optional, Tuple
 
@@ -133,18 +134,17 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
         logger.debug(f"Task result: {task_result}")
 
         # Extract conversation context and response from task result
-        conversation_context = task_result.input
-        agent_response = task_result.output
+        conversation, agent_response = self._parse_task_result(task_result)
 
-        if not conversation_context or not agent_response:
-            raise ValueError("Missing conversation context or agent response")
+        if not conversation:
+            raise ValueError("Missing conversation")
+
+        if not agent_response:
+            raise ValueError("Missing agent response")
 
         try:
             # Format conversation context
-            conversation_str = "\n".join(
-                f"{'User' if i % 2 == 0 else 'Assistant'}: {msg}"
-                for i, msg in enumerate(conversation_context)
-            )
+            formatted_conversation = self._format_conversation(conversation)
 
             messages: List[ChatCompletionMessageParam] = [
                 ChatCompletionSystemMessageParam(
@@ -154,7 +154,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
                 ChatCompletionUserMessageParam(
                     role="user",
                     content=(
-                        f"Conversation Context:\n{conversation_str}\n\n"
+                        f"Conversation:\n{formatted_conversation}\n\n"
                         f"Agent Response to Evaluate:\n{agent_response}"
                     ),
                 ),
@@ -173,19 +173,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             score, explanation = self._parse_llm_output(content)
 
             # Convert score to a descriptive label
-            label = (
-                "excellent"
-                if score >= 0.9
-                else (
-                    "good"
-                    if score >= 0.7
-                    else (
-                        "fair"
-                        if score >= 0.5
-                        else "poor" if score >= 0.3 else "unacceptable"
-                    )
-                )
-            )
+            label = self._determine_label(score)
 
             return EvaluationResult(
                 score=score,
@@ -194,6 +182,54 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             )
         except Exception as e:
             raise ValueError(f"Agent response quality evaluation failed: {str(e)}")
+
+    def _format_conversation(self, conversation: List[str]) -> str:
+        """Format the conversation for the LLM.
+
+        Args:
+            conversation: The conversation to format
+
+        Returns:
+            The formatted conversation
+        """
+        return "\n".join(
+            f"{'User' if i % 2 == 0 else 'Assistant'}: {msg}"
+            for i, msg in enumerate(conversation)
+        )
+
+    def _parse_task_result(self, task_result: TaskResult) -> Tuple[List[str], str]:
+        """Parse the task result to extract the conversation and response.
+
+        Args:
+            task_result: The task result to parse
+
+        Returns:
+            Tuple of (conversation: List[str], response: str)
+        """
+        return (
+            json.loads(task_result.input.get("input", "")),
+            task_result.output.get("response", ""),
+        )
+
+    def _determine_label(self, score: float) -> str:
+        """Determine the label for the given score.
+
+        Args:
+            score: The score to determine the label for
+
+        Returns:
+            The label for the given score
+        """
+        if score >= 0.9:
+            return "excellent"
+        elif score >= 0.7:
+            return "good"
+        elif score >= 0.5:
+            return "fair"
+        elif score >= 0.3:
+            return "poor"
+        else:
+            return "unacceptable"
 
     def __call__(self, task_result: Any) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
