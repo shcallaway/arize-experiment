@@ -70,6 +70,24 @@ class BaseEvaluator(ABC):
         """
         super().__init__()
 
+    # @abstractmethod
+    # def __str__(self) -> str:
+    #     """Return the simple name of the evaluator."""
+    #     pass
+
+    # @abstractmethod
+    # def __repr__(self) -> str:
+    #     """Return a string representation of the evaluator."""
+    #     pass
+
+    def __str__(self) -> str:
+        """Return the simple name of the evaluator."""
+        return self.name
+
+    def __repr__(self) -> str:
+        """Return a string representation of the evaluator."""
+        return self.name
+
     @property
     @abstractmethod
     def name(self) -> str:
