@@ -1,29 +1,8 @@
-"""Tests for schema validation functionality."""
+"""Tests for schema definition and basic validation functionality."""
 
 from typing import Any, Dict
-from unittest.mock import MagicMock
 
 from arize_experiment.core.schema import ColumnSchema, DatasetSchema, DataType
-from arize_experiment.core.task import Task, TaskResult
-from arize_experiment.core.validation import SchemaValidator
-
-
-class MockTask(Task):
-    """Mock task for testing schema validation."""
-
-    def __init__(self, schema: DatasetSchema) -> None:
-        self._schema = schema
-
-    @property
-    def name(self) -> str:
-        return "mock_task"
-
-    @property
-    def required_schema(self) -> DatasetSchema:
-        return self._schema
-
-    def execute(self, Input: Dict) -> TaskResult:
-        return TaskResult(input=Input, output=None)
 
 
 def test_simple_schema_validation():
@@ -104,42 +83,6 @@ def test_nested_schema_validation():
     assert len(errors) == 1
     assert "messages[1].content" in errors[0].path
     assert "missing" in errors[0].message.lower()
-
-
-def test_schema_validator_integration():
-    """Test SchemaValidator integration with Task and ArizeClient."""
-    schema = DatasetSchema(
-        columns={
-            "input": ColumnSchema(name="input", types=[DataType.STRING], required=True)
-        }
-    )
-    task = MockTask(schema)
-
-    # Create mock Arize client
-    mock_client = MagicMock()
-    mock_dataset = MagicMock()
-    mock_sample = MagicMock()
-
-    # Valid data
-    valid_data = {"input": "hello"}
-    mock_sample.data = [valid_data]
-    mock_dataset.get_sample.return_value = mock_sample
-    mock_client.get_dataset.return_value = mock_dataset
-
-    validator = SchemaValidator()
-    errors = validator.validate("test_dataset", task, mock_client)
-    assert not errors
-
-    # Invalid data
-    invalid_data = {"input": 123}  # Wrong type
-    mock_sample.data = [invalid_data]
-    mock_dataset.get_sample.return_value = mock_sample
-    mock_client.get_dataset.return_value = mock_dataset
-
-    errors = validator.validate("test_dataset", task, mock_client)
-    assert len(errors) == 1
-    assert errors[0].path == "input"
-    assert "type" in errors[0].message.lower()
 
 
 def test_union_types():
