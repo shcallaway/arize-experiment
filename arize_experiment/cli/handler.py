@@ -14,6 +14,7 @@ from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import Task
 from arize_experiment.core.task_registry import TaskRegistry
+from arize_experiment.core.validation import SchemaValidator
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,12 @@ class Handler:
     1. Parameter validation and processing
     2. Service coordination
     3. Error handling and user feedback
+    4. Schema validation
     """
 
     def __init__(self) -> None:
         """Initialize the command handler."""
-        pass
+        self.schema_validator = SchemaValidator()
 
     def run(  # noqa: C901
         self,
@@ -98,7 +100,7 @@ class Handler:
         if dataset_exists is None:
             raise ConfigurationError(
                 f"Dataset '{dataset_name}' does not exist",
-                details={"dataset_name": dataset_name},
+                details={"dataset": dataset_name},
             )
 
         # Make sure experiment DOES NOT exist
@@ -124,8 +126,44 @@ class Handler:
                 },
             )
 
-        # Create task callable
-        task = self._create_task(task_name)
+        # Create task instance
+        logger.info(f"Creating task '{task_name}'")
+        try:
+            task = self._create_task(task_name)
+        except Exception as e:
+            raise ConfigurationError(
+                f"Failed to create task '{task_name}'",
+                details={"error": str(e)},
+            )
+
+        # Validate dataset schema against task requirements
+        logger.info("Validating dataset schema")
+        try:
+            errors = self.schema_validator.validate(dataset_name, task, arize_client)
+            if errors:
+                raise ConfigurationError(
+                    "Dataset schema incompatible with task",
+                    details={
+                        "dataset": dataset_name,
+                        "task": task_name,
+                        "errors": [
+                            {
+                                "path": e.path,
+                                "message": e.message,
+                                "expected": e.expected,
+                                "actual": e.actual,
+                            }
+                            for e in errors
+                        ],
+                    },
+                )
+        except Exception as e:
+            if isinstance(e, ConfigurationError):
+                raise e
+            raise ConfigurationError(
+                "Failed to validate dataset schema",
+                details={"dataset": dataset_name, "task": task_name, "error": str(e)},
+            )
 
         # Make sure evaluators are provided
         if not evaluator_names:

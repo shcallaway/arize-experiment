@@ -81,6 +81,7 @@ class ArizeClient:
                 developer_key=developer_key,
             )
         except Exception as e:
+            logger.debug(f"Error creating Arize datasets client: {e}")
             raise ArizeClientError(
                 "Failed to create Arize datasets client", details={"error": str(e)}
             )
@@ -103,6 +104,7 @@ class ArizeClient:
                 space_id=self._space_id, dataset_name=dataset_name
             )
         except Exception as e:
+            logger.debug(f"Error getting dataset: {e}")
             error_msg = str(e).lower()
             if "not found" in error_msg or "does not exist" in error_msg:
                 return None
@@ -146,6 +148,7 @@ class ArizeClient:
                 experiment_name=experiment_name,
             )
         except Exception as e:
+            logger.debug(f"Error running experiment: {e}")
             error_msg = (
                 f"Failed to run experiment '{experiment_name}' "
                 f"on dataset '{dataset_name}'"
@@ -183,5 +186,6 @@ class ArizeClient:
                 experiment_name=experiment_name,
                 dataset_name=dataset_name,
             )
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Error getting experiment: {e}")
             return None

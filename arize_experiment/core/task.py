@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from arize_experiment.core.errors import TaskError
+from arize_experiment.core.schema import DatasetSchema
 
 
 @dataclass
@@ -56,22 +57,26 @@ class Task(ABC):
 
     @abstractmethod
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the task.
-
-        Args:
-            *args: Variable length argument list
-            **kwargs: Arbitrary keyword arguments
-        """
+        """Initialize the task with any required parameters."""
         pass
 
     @property
     @abstractmethod
     def name(self) -> str:
-        """Get the name of the task.
+        """Get the task's name.
 
         Returns:
-            str: The unique identifier for this task. This should be a
-                 lowercase string with underscores, e.g. 'sentiment_analysis'
+            str: The task's name
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def required_schema(self) -> DatasetSchema:
+        """Get the dataset schema required by this task.
+
+        Returns:
+            DatasetSchema: The required schema for input data
         """
         pass
 
@@ -83,19 +88,13 @@ class Task(ABC):
         """Execute the task with the given input.
 
         Args:
-            Input: Dictionary containing the input data for the task.
-                       Tasks should document their expected input format.
+            Input: Dictionary containing the task's input data
 
         Returns:
-            TaskResult containing:
-                - input: The original input data
-                - output: The task's output data
-                - metadata: Optional execution metadata
-                - error: Any error message if task failed
+            TaskResult: The result of the task execution
 
         Raises:
-            TaskError: If the input is invalid or task execution fails
-            ValueError: If the input format is incorrect
+            TaskError: If the task fails to execute
         """
         pass
 

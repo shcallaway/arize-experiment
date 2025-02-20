@@ -11,6 +11,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
 from arize_experiment.core.errors import TaskError
+from arize_experiment.core.schema import ColumnSchema, DatasetSchema, DataType
 from arize_experiment.core.task import Task, TaskResult
 from arize_experiment.core.task_registry import TaskRegistry
 
@@ -60,6 +61,25 @@ class SentimentClassificationTask(Task):
             str: The unique identifier for this task
         """
         return "sentiment_classification"
+
+    @property
+    def required_schema(self) -> DatasetSchema:
+        """Get the dataset schema required by this task.
+
+        Returns:
+            DatasetSchema: The required schema for input data
+        """
+        return DatasetSchema(
+            columns={
+                "input": ColumnSchema(
+                    name="input",
+                    types=[DataType.STRING],
+                    required=True,
+                    description="The text to classify",
+                )
+            },
+            description="Dataset containing text for sentiment classification",
+        )
 
     def execute(self, Input: Dict[str, Any]) -> TaskResult:
         """Execute the sentiment classification task.

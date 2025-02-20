@@ -10,6 +10,7 @@ from arize.experimental.datasets.experiments.types import EvaluationResult
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.experiment import Experiment
+from arize_experiment.core.schema import ColumnSchema, DatasetSchema, DataType
 from arize_experiment.core.task import Task, TaskResult
 
 
@@ -69,6 +70,25 @@ class MockTask(Task):
     @property
     def name(self) -> str:
         return "mock_task"
+
+    @property
+    def required_schema(self) -> DatasetSchema:
+        """Get the dataset schema required by this task.
+
+        Returns:
+            DatasetSchema: The required schema for input data
+        """
+        return DatasetSchema(
+            columns={
+                "input": ColumnSchema(
+                    name="input",
+                    types=[DataType.STRING],
+                    required=True,
+                    description="Mock input field",
+                )
+            },
+            description="Mock schema for testing",
+        )
 
     def execute(self, Input: Dict[str, Any]) -> TaskResult:
         return TaskResult(input=Input, output="mock_output")
