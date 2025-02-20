@@ -25,47 +25,16 @@ Example:
 """
 
 import logging
-from typing import Any, List, Protocol
+from typing import Any, List
 
 import pandas as pd
 
+from arize_experiment.core.arize import ArizeClientProtocol
 from arize_experiment.core.errors import ConfigurationError
 from arize_experiment.core.schema import ValidationError
 from arize_experiment.core.task import Task
 
 logger = logging.getLogger(__name__)
-
-
-class ArizeDataset(Protocol):
-    """Protocol for Arize dataset interface."""
-
-    def get_sample(self, limit: int) -> Any: ...
-
-
-class ArizeClient(Protocol):
-    """Protocol defining the required Arize client interface.
-
-    This protocol specifies the methods that must be implemented by any
-    Arize client used with the validation framework. It ensures type
-    safety and consistent behavior across different client implementations.
-
-    Methods:
-        get_dataset: Retrieve a dataset by name
-    """
-
-    def get_dataset(self, dataset_name: str) -> ArizeDataset:
-        """Get a dataset by name.
-
-        Args:
-            dataset_name: Name of the dataset to retrieve
-
-        Returns:
-            ArizeDataset: The requested dataset
-
-        Raises:
-            ArizeClientError: If dataset retrieval fails
-        """
-        ...
 
 
 class SchemaValidator:
@@ -75,7 +44,7 @@ class SchemaValidator:
         self,
         dataset_name: str,
         task: Task,
-        arize_client: ArizeClient,
+        arize_client: ArizeClientProtocol,
     ) -> List[ValidationError]:
         """Validate a dataset against a task's schema requirements.
 

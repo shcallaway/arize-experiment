@@ -27,7 +27,7 @@ Example:
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Protocol
 
 import pandas as pd
 from arize.experimental.datasets import ArizeDatasetsClient
@@ -36,6 +36,38 @@ from arize.experimental.datasets.utils.constants import GENERATIVE
 from arize_experiment.core.errors import ArizeClientError
 
 logger = logging.getLogger(__name__)
+
+
+class ArizeDatasetProtocol(Protocol):
+    """Protocol for Arize dataset interface."""
+
+    def get_sample(self, limit: int) -> Any: ...
+
+
+class ArizeClientProtocol(Protocol):
+    """Protocol defining the required Arize client interface.
+
+    This protocol specifies the methods that must be implemented by any
+    Arize client used with the validation framework. It ensures type
+    safety and consistent behavior across different client implementations.
+
+    Methods:
+        get_dataset: Retrieve a dataset by name
+    """
+
+    def get_dataset(self, dataset_name: str) -> ArizeDatasetProtocol:
+        """Get a dataset by name.
+
+        Args:
+            dataset_name: Name of the dataset to retrieve
+
+        Returns:
+            ArizeDatasetProtocol: The requested dataset
+
+        Raises:
+            ArizeClientError: If dataset retrieval fails
+        """
+        ...
 
 
 @dataclass
@@ -89,7 +121,7 @@ class ArizeClientConfiguration:
         self.space_id = space_id
 
 
-class ArizeClient:
+class ArizeClient(ArizeClientProtocol):
     """Enhanced Arize API client wrapper.
 
     This class wraps the Arize datasets client with:
