@@ -214,3 +214,80 @@ def test_cli_handles_dotenv_error(cli_runner):
         result = cli_runner.invoke(cli, ["run", "--help"])
         assert result.exit_code == 1
         assert "An unexpected error occurred: Failed to load .env file" in result.output
+
+
+def test_create_dataset_command_success(cli_runner, mock_handler):
+    """Test the create_dataset command with valid arguments."""
+    result = cli_runner.invoke(
+        cli,
+        [
+            "create-dataset",
+            "--name",
+            "test-dataset",
+            "--path-to-csv",
+            "test.csv",
+        ],
+    )
+    assert result.exit_code == 0
+    mock_handler.create_dataset.assert_called_once_with(
+        dataset_name="test-dataset",
+        path_to_csv="test.csv",
+    )
+
+
+def test_create_dataset_command_missing_required_args(cli_runner):
+    """Test that create_dataset command fails when missing required args.
+
+    Verifies that proper error handling occurs when required arguments are not provided.
+    """
+    result = cli_runner.invoke(cli, ["create-dataset"])
+    assert result.exit_code != 0
+    assert "Missing option" in result.output
+
+
+def test_create_dataset_command_file_not_found(cli_runner, mock_handler):
+    """Test that create_dataset command fails when CSV file is not found.
+
+    Verifies that proper error handling occurs when the specified CSV file is not found.
+    """
+    mock_handler.create_dataset.side_effect = FileNotFoundError("test.csv not found")
+
+    result = cli_runner.invoke(
+        cli,
+        [
+            "create-dataset",
+            "--name",
+            "test-dataset",
+            "--path-to-csv",
+            "test.csv",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "Error: File not found: test.csv not found" in result.output
+
+
+def test_create_dataset_command_dataset_exists(cli_runner, mock_handler):
+    """Test that create_dataset command fails when dataset exists.
+
+    Verifies that proper error handling occurs when attempting to create a
+    dataset that exists.
+    """
+    from arize_experiment.core.errors import ConfigurationError
+
+    mock_handler.create_dataset.side_effect = ConfigurationError(
+        "Dataset 'test-dataset' already exists",
+        details={"dataset": "test-dataset"},
+    )
+
+    result = cli_runner.invoke(
+        cli,
+        [
+            "create-dataset",
+            "--name",
+            "test-dataset",
+            "--path-to-csv",
+            "test.csv",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "Error: Dataset 'test-dataset' already exists" in result.output

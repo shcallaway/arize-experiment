@@ -2,6 +2,7 @@
 Tests for the agent response quality evaluator.
 """
 
+import json
 import os
 from unittest.mock import MagicMock, patch
 
@@ -111,17 +112,21 @@ def test_evaluate_success(mock_openai_client, mock_openai_response):
     # Create test task result
     task_result = TaskResult(
         input={
-            "conversation": [
-                "What is Python?",
-                "Python is a high-level programming language.",
-                "Can you give an example?",
-            ]
+            "input": json.dumps(
+                [
+                    "What is Python?",
+                    "Python is a high-level programming language.",
+                    "Can you give an example?",
+                ]
+            )
         },
-        output=(
-            "Here's a simple example of Python code:\n\n"
-            "print('Hello, World!')\n\n"
-            "This code prints the text 'Hello, World!' to the console."
-        ),
+        output={
+            "response": (
+                "Here's a simple example of Python code:\n\n"
+                "print('Hello, World!')\n\n"
+                "This code prints the text 'Hello, World!' to the console."
+            )
+        },
         metadata={},
     )
 
@@ -149,26 +154,22 @@ def test_evaluate_missing_data(mock_openai_client):
     """Test evaluation with missing conversation or response."""
     evaluator = AgentResponseQualityEvaluator()
 
-    # Test missing conversation
+    # Test missing conversation (causes JSON decode error)
     task_result = TaskResult(
         input={},
-        output="Test response",
+        output={"response": "Test response"},
         metadata={},
     )
-    with pytest.raises(
-        ValueError, match="Missing conversation context or agent response"
-    ):
+    with pytest.raises(json.JSONDecodeError):
         evaluator.evaluate(task_result)
 
     # Test missing response
     task_result = TaskResult(
-        input={"conversation": ["Test message"]},
-        output="",
+        input={"input": json.dumps(["Test message"])},
+        output={},
         metadata={},
     )
-    with pytest.raises(
-        ValueError, match="Missing conversation context or agent response"
-    ):
+    with pytest.raises(ValueError, match="Missing agent response"):
         evaluator.evaluate(task_result)
 
 

@@ -86,11 +86,9 @@ def test_get_dataset_error(arize_client, mock_arize_datasets_client):
     """Test dataset retrieval error."""
     mock_arize_datasets_client.get_dataset.side_effect = Exception("Unknown error")
 
-    with pytest.raises(ArizeClientError) as exc_info:
-        arize_client.get_dataset("test-dataset")
+    result = arize_client.get_dataset("test-dataset")
 
-    assert "Error retrieving dataset" in str(exc_info.value)
-    assert "Unknown error" in str(exc_info.value)
+    assert result is None
 
 
 def test_run_experiment_success(arize_client, mock_arize_datasets_client):
