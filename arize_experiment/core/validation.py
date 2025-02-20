@@ -5,9 +5,9 @@ This module provides validation functionality to ensure datasets match
 the schema requirements of tasks.
 """
 
+import logging
 from typing import Any, List, Protocol
 
-import logging
 import pandas as pd
 
 from arize_experiment.core.errors import ConfigurationError
@@ -32,7 +32,7 @@ class ArizeClient(Protocol):
 class SchemaValidator:
     """Validates dataset schemas against task requirements."""
 
-    def validate(
+    def validate(  # noqa: C901
         self,
         dataset_name: str,
         task: Task,

@@ -1,17 +1,11 @@
 """Tests for schema validation functionality."""
 
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict
 from unittest.mock import MagicMock
 
-import pytest
-
-from arize_experiment.core.schema import (
-    ColumnSchema,
-    DatasetSchema,
-    DataType,
-    ValidationError,
-)
+from arize_experiment.core.schema import ColumnSchema, DatasetSchema, DataType
 from arize_experiment.core.task import Task, TaskResult
+from arize_experiment.core.validation import SchemaValidator
 
 
 class MockTask(Task):
@@ -114,8 +108,6 @@ def test_nested_schema_validation():
 
 def test_schema_validator_integration():
     """Test SchemaValidator integration with Task and ArizeClient."""
-    from arize_experiment.core.validation import SchemaValidator
-
     schema = DatasetSchema(
         columns={
             "input": ColumnSchema(name="input", types=[DataType.STRING], required=True)

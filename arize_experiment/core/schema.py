@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Any, cast
+from typing import Any, Dict, List, Optional, cast
 
 
 class DataType(Enum):
@@ -38,6 +38,7 @@ class ColumnSchema:
     description: Optional[str] = None
 
     def __post_init__(self) -> None:
+        """Initialize the schema after dataclass initialization."""
         if (
             self.nested_schema is not None
             and DataType.DICT not in self.types
@@ -63,7 +64,8 @@ class DatasetSchema:
             data: Dictionary containing the data to validate
 
         Returns:
-            List of ValidationError objects if validation fails, empty list if successful
+            List of ValidationError objects if validation fails,
+            empty list if successful
         """
         errors: List[ValidationError] = []
         self._validate_dict(data, self.columns, "", errors)
@@ -96,7 +98,7 @@ class DatasetSchema:
             value = data[name]
             self._validate_value(value, col_schema, field_path, errors)
 
-    def _validate_value(
+    def _validate_value(  # noqa: C901
         self, value: Any, schema: ColumnSchema, path: str, errors: List[ValidationError]
     ) -> None:
         """Validate a single value against its schema."""
@@ -155,7 +157,10 @@ class DatasetSchema:
                         errors.append(
                             ValidationError(
                                 path=f"{path}[{i}]",
-                                message="List item must be a dictionary for nested schema validation",
+                                message=(
+                                    "List item must be a dictionary for "
+                                    "nested schema validation"
+                                ),
                                 expected="dict",
                                 actual=type(item).__name__,
                             )

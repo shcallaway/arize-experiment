@@ -1,9 +1,8 @@
 """Execute an agent by calling a web server."""
 
-import json
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import requests
 from requests.exceptions import RequestException
@@ -62,7 +61,9 @@ class ExecuteAgentTask(Task):
                             name="role",
                             types=[DataType.STRING],
                             required=True,
-                            description="The role of the speaker (e.g. 'user' or 'assistant')",
+                            description=(
+                                "The role of the speaker (e.g. 'user' or 'assistant')"
+                            ),
                         ),
                         "content": ColumnSchema(
                             name="content",

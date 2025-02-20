@@ -1,6 +1,6 @@
 """Tests for the execute agent task."""
 
-from typing import Any, Dict, cast
+from typing import Any, Dict
 from unittest.mock import Mock, patch
 
 import pytest
