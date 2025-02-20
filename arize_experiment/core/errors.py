@@ -1,5 +1,25 @@
 """
 Core error types and error handling utilities for the Arize experiment framework.
+
+This module defines the base error types and utilities used throughout the
+framework. It provides a consistent approach to error handling with:
+1. Detailed error messages
+2. Structured error details
+3. Hierarchical error types
+4. Logging integration
+
+Example:
+    ```python
+    from arize_experiment.core.errors import TaskError
+
+    try:
+        result = process_data()
+    except Exception as e:
+        raise TaskError(
+            "Failed to process data",
+            details={"error": str(e)}
+        )
+    ```
 """
 
 import logging
@@ -9,15 +29,44 @@ logger = logging.getLogger(__name__)
 
 
 class ArizeExperimentError(Exception):
-    """Base exception for all Arize experiment errors."""
+    """Base exception for all Arize experiment errors.
+
+    This class provides a consistent base for all framework errors with support
+    for detailed error messages and structured error details.
+
+    Attributes:
+        message (str): The main error message
+        details (Dict[str, Any]): Additional error context and details
+
+    Example:
+        ```python
+        raise ArizeExperimentError(
+            "Operation failed",
+            details={
+                "operation": "data_processing",
+                "error": "Invalid format"
+            }
+        )
+        ```
+    """
 
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        """Initialize the error.
+
+        Args:
+            message: The main error message
+            details: Optional dictionary of additional error details
+        """
         self.message = message
         self.details = details or {}
         super().__init__(self.format_message())
 
     def format_message(self) -> str:
-        """Format the error message with details if available."""
+        """Format the error message with details if available.
+
+        Returns:
+            str: The formatted error message including any details
+        """
         msg = self.message
         if self.details:
             details_str = ", ".join(f"{k}={v}" for k, v in self.details.items())
@@ -26,15 +75,26 @@ class ArizeExperimentError(Exception):
 
 
 class ArizeClientError(ArizeExperimentError):
-    """Base class for client-related errors.
+    """Error related to Arize API client operations.
 
-    This includes:
-    - Authentication issues
+    This error type is raised for issues related to:
+    - Authentication failures
     - Network connectivity problems
-    - Rate limiting
-    - API errors
+    - API rate limiting
+    - Invalid API responses
     - Dataset access issues
-    - Experiment creation/retrieval issues
+    - Experiment creation/retrieval failures
+
+    Example:
+        ```python
+        try:
+            client.create_dataset(data)
+        except Exception as e:
+            raise ArizeClientError(
+                "Failed to create dataset",
+                details={"error": str(e)}
+            )
+        ```
     """
 
 
@@ -93,21 +153,28 @@ class EvaluatorError(ArizeExperimentError):
 
 
 class TaskError(ArizeExperimentError):
-    """Error related to task issues.
+    """Error related to task execution issues.
 
     This error is raised when there are problems during task
-    execution. Common cases include:
+    execution, including:
     - Invalid input data format
     - Failed API calls or external service errors
     - Resource constraints or timeouts
     - Internal processing errors
+    - Task configuration issues
 
     Example:
         ```python
         try:
             response = api.process(input_data)
         except ApiError as e:
-            raise TaskError(f"API call failed: {str(e)}")
+            raise TaskError(
+                "API call failed",
+                details={
+                    "api": "openai",
+                    "error": str(e)
+                }
+            )
         ```
     """
 

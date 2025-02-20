@@ -46,7 +46,7 @@ def test_evaluator_initialization(mock_openai_client):
     """Test evaluator initialization with default parameters."""
     evaluator = AgentResponseQualityEvaluator()
     assert evaluator.name == "agent_response_quality"
-    assert evaluator._model == "gpt-4"
+    assert evaluator._model == "gpt-4o-mini"
     assert evaluator._temperature == 0
 
 
@@ -145,7 +145,7 @@ def test_evaluate_success(mock_openai_client, mock_openai_response):
     # Verify API call
     mock_client.chat.completions.create.assert_called_once()
     call_kwargs = mock_client.chat.completions.create.call_args[1]
-    assert call_kwargs["model"] == "gpt-4"
+    assert call_kwargs["model"] == "gpt-4o-mini"
     assert call_kwargs["temperature"] == 0
     assert len(call_kwargs["messages"]) == 2
 

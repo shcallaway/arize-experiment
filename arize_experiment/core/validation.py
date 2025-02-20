@@ -1,8 +1,27 @@
 """
-Schema validation for arize-experiment.
+Schema validation utilities for Arize datasets and tasks.
 
-This module provides validation functionality to ensure datasets match
-the schema requirements of tasks.
+This module provides utilities for validating dataset schemas against task
+requirements. It ensures that datasets contain the required columns with
+appropriate data types before task execution.
+
+The validation framework:
+1. Validates column presence
+2. Checks data types
+3. Verifies required fields
+4. Handles nested schemas
+5. Provides detailed error reporting
+
+Example:
+    ```python
+    from arize_experiment.core.validation import SchemaValidator
+    from arize_experiment.core.task import Task
+
+    validator = SchemaValidator()
+    errors = validator.validate(dataset_name, task, arize_client)
+    if errors:
+        print("Validation failed:", errors)
+    ```
 """
 
 import logging
@@ -24,9 +43,29 @@ class ArizeDataset(Protocol):
 
 
 class ArizeClient(Protocol):
-    """Protocol for Arize client interface."""
+    """Protocol defining the required Arize client interface.
 
-    def get_dataset(self, dataset_name: str) -> ArizeDataset: ...
+    This protocol specifies the methods that must be implemented by any
+    Arize client used with the validation framework. It ensures type
+    safety and consistent behavior across different client implementations.
+
+    Methods:
+        get_dataset: Retrieve a dataset by name
+    """
+
+    def get_dataset(self, dataset_name: str) -> ArizeDataset:
+        """Get a dataset by name.
+
+        Args:
+            dataset_name: Name of the dataset to retrieve
+
+        Returns:
+            ArizeDataset: The requested dataset
+
+        Raises:
+            ArizeClientError: If dataset retrieval fails
+        """
+        ...
 
 
 class SchemaValidator:

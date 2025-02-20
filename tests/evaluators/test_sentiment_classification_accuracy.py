@@ -142,9 +142,11 @@ def test_evaluate_api_error(mock_openai: Mock) -> None:
         metadata={},
     )
 
-    with pytest.raises(ValueError) as exc_info:
-        evaluator.evaluate(task_result)
-    assert "Sentiment accuracy evaluation failed" in str(exc_info.value)
+    result = evaluator.evaluate(task_result)
+    assert isinstance(result, EvaluationResult)
+    assert result.score == 0.0
+    assert result.label == "error"
+    assert "API Error" in result.explanation
 
 
 @patch("arize_experiment.evaluators.sentiment_classification_accuracy.OpenAI")

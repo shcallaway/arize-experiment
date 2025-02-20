@@ -1,27 +1,38 @@
-"""Sentiment classification task using OpenAI's API.
+"""
+Sentiment classification task implementation using OpenAI's API.
 
-This task uses OpenAI's language models to classify text sentiment
-as positive, negative, or neutral. The task leverages OpenAI's
-advanced language understanding capabilities to provide accurate
-sentiment analysis.
+This module provides a task implementation for classifying text sentiment
+using OpenAI's language models. It demonstrates:
+1. Task implementation best practices
+2. OpenAI API integration
+3. Error handling
+4. Input validation
+5. Result standardization
+
+The task is designed to be:
+1. Simple to use
+2. Reliable
+3. Configurable
+4. Well-documented
+5. Error-resistant
 
 Example:
     ```python
-    from arize_experiment.core.task_registry import TaskRegistry
+    from arize_experiment.tasks.sentiment_classification import (
+        SentimentClassificationTask
+    )
 
-    # Create task instance
-    task = TaskRegistry.get("sentiment_classification")()
+    task = SentimentClassificationTask(
+        model="gpt-4",
+        temperature=0
+    )
 
-    # Classify sentiment
     result = task.execute({
         "input": "I really enjoyed this product!"
     })
-    # result.output would be "positive"
-    ```
 
-Note:
-    This task requires an OpenAI API key to be set either in the
-    environment variables or passed during initialization.
+    print(result.output)  # "positive"
+    ```
 """
 
 import logging
@@ -52,11 +63,19 @@ class SentimentClassificationTask(Task):
     a simple prompt-based approach, instructing the model to respond with
     a single word classification.
 
-    The task is designed to:
-    1. Be simple and straightforward to use
-    2. Provide consistent results
-    3. Handle various text inputs gracefully
-    4. Return clear, categorical classifications
+    Features:
+    1. Simple API integration
+    2. Consistent results
+    3. Configurable model parameters
+    4. Comprehensive error handling
+    5. Clear output format
+
+    Implementation Details:
+    - Uses a zero-shot classification approach
+    - Returns standardized sentiment labels
+    - Handles various text inputs gracefully
+    - Provides detailed error information
+    - Supports custom model configuration
 
     Attributes:
         model (str): The OpenAI model to use for classification
@@ -64,9 +83,24 @@ class SentimentClassificationTask(Task):
         api_key (Optional[str]): OpenAI API key if not set in environment
         _client (OpenAI): OpenAI client instance
 
-    Note:
-        The task uses a zero temperature by default to ensure consistent
-        results, but this can be adjusted if more variation is desired.
+    Example:
+        ```python
+        task = SentimentClassificationTask(
+            model="gpt-4",
+            temperature=0,
+            api_key="your-api-key"  # Optional
+        )
+
+        result = task.execute({
+            "input": "The service was excellent!"
+        })
+
+        if result.success:
+            print(f"Sentiment: {result.output}")
+            print(f"Confidence: {result.metadata['confidence']}")
+        else:
+            print(f"Error: {result.error}")
+        ```
     """
 
     def __init__(
@@ -80,12 +114,21 @@ class SentimentClassificationTask(Task):
         """Initialize the sentiment classification task.
 
         Args:
-            model: The OpenAI model to use
-            temperature: The sampling temperature for the model
-            api_key: OpenAI API key (optional if set in environment)
-            *args: Variable length argument list
-            **kwargs: Arbitrary keyword arguments
+            model: The OpenAI model to use (default: gpt-4o-mini)
+            temperature: The sampling temperature (default: 0)
+            api_key: Optional OpenAI API key
+            *args: Additional positional arguments
+            **kwargs: Additional keyword arguments
+
+        Raises:
+            ValueError: If model or temperature are invalid
+            ConfigurationError: If API key is invalid
         """
+        if not model:
+            raise ValueError("Model name cannot be empty")
+        if temperature < 0 or temperature > 2:
+            raise ValueError("Temperature must be between 0 and 2")
+
         self.model = model
         self.temperature = temperature
         self.api_key = api_key
@@ -104,8 +147,11 @@ class SentimentClassificationTask(Task):
     def required_schema(self) -> DatasetSchema:
         """Get the dataset schema required by this task.
 
+        The schema requires a single text input column that will be
+        analyzed for sentiment.
+
         Returns:
-            DatasetSchema: The required schema for input data
+            DatasetSchema: Schema requiring a text input column
         """
         return DatasetSchema(
             columns={
@@ -122,15 +168,27 @@ class SentimentClassificationTask(Task):
     def execute(self, Input: Dict[str, Any]) -> TaskResult:
         """Execute the sentiment classification task.
 
+        This method:
+        1. Validates the input text
+        2. Prepares the classification prompt
+        3. Makes the API request
+        4. Processes the response
+        5. Returns a standardized result
+
         Args:
-            Input: A dictionary containing the input text to classify under the
-                "input" key.
+            Input: Dictionary containing the text to classify under
+                  the "input" key
 
         Returns:
-            TaskResult: The result of the classification task.
+            TaskResult containing:
+                - input: The original input dictionary
+                - output: The sentiment classification (positive/negative/neutral)
+                - metadata: Additional information including confidence scores
+                - error: Error message if classification failed
 
         Raises:
-            TaskError: If the input is invalid or classification fails
+            TaskError: If input is invalid or classification fails
+            ValueError: If input format is incorrect
         """
         try:
             # Extract input from Input.

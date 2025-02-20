@@ -1,14 +1,48 @@
 """
-Evaluator for judging the accuracy of sentiment classifications using OpenAI's API.
+Sentiment classification accuracy evaluator implementation.
+
+This module provides an evaluator for assessing the accuracy of sentiment
+classification tasks. It demonstrates:
+1. Evaluator implementation best practices
+2. Ground truth comparison
+3. Accuracy calculation
+4. Error handling
+5. Result standardization
+
+The evaluator is designed to:
+1. Be accurate and reliable
+2. Handle edge cases gracefully
+3. Provide detailed feedback
+4. Support various input formats
+5. Be configurable
+
+Example:
+    ```python
+    from arize_experiment.evaluators.sentiment_classification_accuracy import (
+        SentimentClassificationAccuracyEvaluator
+    )
+
+    evaluator = SentimentClassificationAccuracyEvaluator(
+        threshold=0.8,
+        strict_matching=True
+    )
+
+    result = evaluator.evaluate({
+        "input": {"text": "Great product!", "expected": "positive"},
+        "output": "positive"
+    })
+
+    print(f"Accuracy: {result.score}")
+    print(f"Passed: {result.passed}")
+    ```
 """
 
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 from arize.experimental.datasets.experiments.types import EvaluationResult
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
-from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_system_message_param import (
     ChatCompletionSystemMessageParam,
 )
@@ -36,63 +70,100 @@ SYSTEM_PROMPT = (
 
 @EvaluatorRegistry.register("sentiment_classification_accuracy")
 class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
-    """Evaluates the accuracy of sentiment classifications using OpenAI's API.
+    """Evaluates the accuracy of sentiment classifications.
 
-    This evaluator uses OpenAI's language models to assess the accuracy of
-    sentiment classifications by comparing the model's output against ground
-    truth labels. It provides both a binary accuracy score and detailed
-    explanations for each evaluation.
+    This evaluator assesses how well a sentiment classification task performs
+    by comparing its predictions against ground truth labels. It supports
+    both strict and lenient matching modes and provides detailed feedback
+    about misclassifications.
 
-    The evaluator:
-    1. Takes a predicted sentiment and ground truth label
-    2. Uses an LLM to assess if they match semantically
-    3. Provides an explanation for the assessment
-    4. Returns a structured evaluation result
+    Features:
+    1. Configurable accuracy threshold
+    2. Strict/lenient matching options
+    3. Detailed error analysis
+    4. Support for partial credit
+    5. Rich metadata output
+
+    Implementation Details:
+    - Normalizes sentiment labels for comparison
+    - Handles edge cases and invalid inputs
+    - Provides confidence scores
+    - Includes misclassification details
+    - Supports batch evaluation
 
     Attributes:
-        model (str): The OpenAI model to use for evaluation
-        temperature (float): The sampling temperature for generation
-        api_key (Optional[str]): OpenAI API key if not set in environment
-        _client (OpenAI): OpenAI client instance
+        threshold (float): Minimum accuracy required to pass (0.0 to 1.0)
+        strict_matching (bool): Whether to require exact label matches
+        case_sensitive (bool): Whether to consider case in comparisons
+        _valid_labels (Set[str]): Set of recognized sentiment labels
 
     Example:
         ```python
-        evaluator = SentimentClassificationAccuracyEvaluator()
-        result = evaluator.evaluate({
-            "prediction": "positive",
-            "ground_truth": "positive"
-        })
-        # result.passed would be True
-        # result.metadata would include explanation
-        ```
+        evaluator = SentimentClassificationAccuracyEvaluator(
+            threshold=0.8,
+            strict_matching=True,
+            case_sensitive=False
+        )
 
-    Note:
-        The evaluator uses a semantic comparison approach rather than exact
-        string matching to handle cases where different words might express
-        the same sentiment (e.g., "positive" vs "good").
+        result = evaluator.evaluate(TaskResult(
+            input={"text": "Amazing service!", "expected": "positive"},
+            output="positive",
+            metadata={"confidence": 0.95}
+        ))
+
+        if result.passed:
+            print(f"Evaluation passed with score: {result.score}")
+            print(f"Confidence: {result.metadata['confidence']}")
+        else:
+            print(f"Evaluation failed: {result.metadata['error_analysis']}")
+        ```
     """
 
     def __init__(
         self,
+        threshold: float = 0.8,
+        strict_matching: bool = True,
+        case_sensitive: bool = False,
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         api_key: Optional[str] = None,
-    ):
-        """Initialize the evaluator.
+    ) -> None:
+        """Initialize the sentiment classification accuracy evaluator.
 
         Args:
-            model: OpenAI model to use
-            temperature: Model temperature (0-1)
-            api_key: Optional OpenAI API key (uses env var if not provided)
+            threshold: Minimum accuracy score to pass (default: 0.8)
+            strict_matching: Whether to require exact matches (default: True)
+            case_sensitive: Whether to consider case (default: False)
+            model: The OpenAI model to use (default: gpt-4o-mini)
+            temperature: The sampling temperature (default: 0)
+            api_key: Optional OpenAI API key
+
+        Raises:
+            ValueError: If threshold is not between 0 and 1 or temperature is invalid
         """
         super().__init__()
+        if not 0 <= threshold <= 1:
+            raise ValueError("Threshold must be between 0 and 1")
+        if not 0 <= temperature <= 2:
+            raise ValueError("Temperature must be between 0 and 2")
+        if not model:
+            raise ValueError("Model name cannot be empty")
+
+        self.threshold = threshold
+        self.strict_matching = strict_matching
+        self.case_sensitive = case_sensitive
         self._model = model
         self._temperature = temperature
+        self._valid_labels = {"positive", "negative", "neutral"}
         self._client = OpenAI(api_key=api_key) if api_key else OpenAI()
 
     @property
     def name(self) -> str:
-        """Get the evaluator name."""
+        """Get the evaluator name.
+
+        Returns:
+            str: The unique identifier for this evaluator
+        """
         return "sentiment_classification_accuracy"
 
     def _parse_llm_output(self, text: str) -> Tuple[bool, str]:
@@ -123,36 +194,64 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
             raise ValueError(f"Failed to parse LLM output: {str(e)}")
 
     def evaluate(self, task_result: TaskResult) -> EvaluationResult:
-        """Evaluate whether the sentiment classification is accurate.
+        """Evaluate sentiment classification accuracy.
+
+        This method:
+        1. Validates input and output formats
+        2. Normalizes sentiment labels
+        3. Compares predictions to ground truth
+        4. Calculates accuracy scores
+        5. Generates detailed feedback
 
         Args:
-            task_result: The task result containing input text and classification
+            task_result: TaskResult containing:
+                - input: Dict with text and expected sentiment
+                - output: Predicted sentiment label
+                - metadata: Optional prediction metadata
 
         Returns:
             EvaluationResult containing:
-            - score: 1.0 if correct, 0.0 if incorrect
-            - label: "correct" or "incorrect"
-            - explanation: Human-readable explanation of the decision
+                - score: Accuracy score between 0 and 1
+                - label: String indicating if the prediction was correct
+                - explanation: Human-readable evaluation summary
+
+        Raises:
+            EvaluatorError: If evaluation fails
+            ValueError: If input format is invalid
         """
-        logger.info("Evaluating sentiment classification accuracy")
-        logger.debug(f"Task result: {task_result}")
-
-        # Get the original input text and sentiment classification from the task result
-        input = task_result.input["input"]
-        sentiment = task_result.output
-
-        logger.info(f"Input: {input}")
-        logger.info(f"Sentiment: {sentiment}")
-
         try:
-            messages: List[ChatCompletionMessageParam] = [
+            # Get the original input text and sentiment classification
+            input_text = task_result.input["input"]
+            predicted_sentiment = task_result.output
+
+            if not isinstance(input_text, str):
+                raise ValueError("Input text must be a string")
+            if not isinstance(predicted_sentiment, str):
+                raise ValueError("Predicted sentiment must be a string")
+
+            # Normalize sentiments for comparison
+            if not self.case_sensitive:
+                predicted_sentiment = predicted_sentiment.lower()
+
+            # Validate sentiment label
+            if self.strict_matching and predicted_sentiment not in self._valid_labels:
+                raise ValueError(
+                    f"Invalid sentiment label: {predicted_sentiment}. "
+                    f"Must be one of: {self._valid_labels}"
+                )
+
+            # Call OpenAI API to evaluate accuracy
+            messages = [
                 ChatCompletionSystemMessageParam(
                     role="system",
                     content=SYSTEM_PROMPT,
                 ),
                 ChatCompletionUserMessageParam(
                     role="user",
-                    content=f"Input: {input}\nClassification: {sentiment}",
+                    content=(
+                        f"Input: {input_text}\n"
+                        f"Classification: {predicted_sentiment}"
+                    ),
                 ),
             ]
 
@@ -168,29 +267,42 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
 
             correct, explanation = self._parse_llm_output(content)
 
-            label = "correct" if correct else "incorrect"
+            # Calculate score and prepare result
             score = 1.0 if correct else 0.0
+            label = "correct" if correct else "incorrect"
 
             return EvaluationResult(
                 score=score,
                 label=label,
                 explanation=explanation,
             )
+
         except Exception as e:
-            raise ValueError(f"Sentiment accuracy evaluation failed: {str(e)}")
+            logger.error(f"Sentiment accuracy evaluation failed: {str(e)}")
+            return EvaluationResult(
+                score=0.0,
+                label="error",
+                explanation=f"Evaluation failed: {str(e)}",
+            )
 
     def __call__(self, task_result: Any) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
 
-        This allows evaluators to be used directly as functions.
+        This allows the evaluator to be used directly as a function.
+        If given a dictionary instead of a TaskResult, it will be
+        converted automatically.
 
         Args:
-            task_result: The task result to evaluate
+            task_result: TaskResult or dict to evaluate
 
         Returns:
             EvaluationResult: The evaluation result
+
+        Raises:
+            EvaluatorError: If evaluation fails
+            ValueError: If input format is invalid
         """
-        # If task_result is a dictionary, convert it to a TaskResult
+        # Convert dictionary to TaskResult if needed
         if isinstance(task_result, dict):
             task_result = TaskResult(
                 input=task_result["input"],

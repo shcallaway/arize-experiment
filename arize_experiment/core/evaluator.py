@@ -3,7 +3,7 @@ Core evaluator interface and result types for arize-experiment.
 
 This module defines the base evaluator interface that all evaluators must
 implement. Evaluators are responsible for assessing the quality or performance
-of task outputs against some criteria.
+of task outputs against specific criteria.
 
 The evaluator framework is designed to be:
 1. Extensible - New evaluators can be easily added
@@ -24,13 +24,16 @@ Example:
         def name(self) -> str:
             return "accuracy_evaluator"
 
-        def evaluate(self, result: Any) -> EvaluationResult:
-            accuracy = self._calculate_accuracy(result)
+        def evaluate(self, output: Any) -> EvaluationResult:
+            accuracy = self._calculate_accuracy(output)
             return EvaluationResult(
                 score=accuracy,
                 passed=accuracy >= self.threshold,
                 metadata={"threshold": self.threshold}
             )
+
+        def __call__(self, output: Any) -> EvaluationResult:
+            return self.evaluate(output)
     ```
 """
 
@@ -49,15 +52,17 @@ class BaseEvaluator(ABC):
 
     An evaluator is responsible for:
     1. Taking a task output
-    2. Assessing its quality or performance
+    2. Assessing its quality or performance against defined criteria
     3. Returning a standardized evaluation result
 
     Implementation Guidelines:
         1. Evaluators should be stateless where possible
         2. Configuration should be done in __init__
-        3. The evaluate method should handle all error cases
+        3. The evaluate method should handle all error cases gracefully
         4. Results should be returned in an EvaluationResult object
-        5. Metadata should include any relevant configuration
+        5. Metadata should include any relevant configuration or context
+        6. Names should be lowercase with underscores
+        7. Error handling should be comprehensive
 
     Attributes:
         name (str): The unique identifier for this evaluator
@@ -66,16 +71,29 @@ class BaseEvaluator(ABC):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the evaluator.
 
-        Subclasses can override this with their own initialization parameters.
+        Subclasses should override this with their own initialization parameters
+        and document them appropriately.
+
+        Args:
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments
         """
         super().__init__()
 
     def __str__(self) -> str:
-        """Return the simple name of the evaluator."""
+        """Return a string representation of the evaluator.
+
+        Returns:
+            str: The evaluator's name
+        """
         return self.name
 
     def __repr__(self) -> str:
-        """Return a string representation of the evaluator."""
+        """Return a detailed string representation of the evaluator.
+
+        Returns:
+            str: The evaluator's name
+        """
         return self.name
 
     @property
@@ -85,7 +103,7 @@ class BaseEvaluator(ABC):
 
         Returns:
             str: The unique identifier for this evaluator. This should be a
-                 lowercase string with underscores, e.g. 'accuracy_evaluator'
+                lowercase string with underscores, e.g. 'accuracy_evaluator'
         """
         pass
 
@@ -95,13 +113,14 @@ class BaseEvaluator(ABC):
 
         Args:
             output: The output to evaluate. Evaluators should document
-                   their expected input types and formats.
+                   their expected input types and formats in their implementation.
 
         Returns:
             EvaluationResult containing:
                 - score: Normalized score between 0 and 1
-                - label: Classification label or category
-                - explanation: Optional explanation of the evaluation
+                - passed: Boolean indicating if the evaluation passed
+                - metadata: Optional dictionary with additional information
+                - explanation: Optional explanation of the evaluation result
 
         Raises:
             EvaluatorError: If evaluation fails or output is invalid
@@ -116,10 +135,11 @@ class BaseEvaluator(ABC):
         This allows evaluators to be used directly as functions.
 
         Args:
-            output: The output to evaluate
+            output: The output to evaluate. Should match the format expected
+                   by the evaluate method.
 
         Returns:
-            The evaluation result
+            EvaluationResult: The evaluation result
 
         Raises:
             EvaluatorError: If evaluation fails

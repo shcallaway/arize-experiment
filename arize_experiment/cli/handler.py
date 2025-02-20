@@ -1,5 +1,29 @@
 """
 Command handlers for the CLI interface.
+
+This module provides handlers for executing CLI commands in the arize-experiment
+framework. It handles parameter validation, service coordination, error handling,
+and user feedback.
+
+The handler is responsible for:
+1. Validating command parameters
+2. Coordinating between services
+3. Managing Arize client interactions
+4. Providing user feedback
+5. Handling errors gracefully
+
+Example:
+    ```python
+    from arize_experiment.cli.handler import Handler
+
+    handler = Handler()
+    handler.run(
+        experiment_name="my_experiment",
+        dataset_name="my_dataset",
+        task_name="sentiment_analysis",
+        evaluator_names=["accuracy"]
+    )
+    ```
 """
 
 import logging
@@ -24,15 +48,35 @@ class Handler:
     """Handles CLI command execution.
 
     This class coordinates between the CLI interface and the application's
-    core services. It handles:
+    core services. It provides a high-level interface for executing commands
+    while handling all the necessary validation, coordination, and error
+    handling.
+
+    Responsibilities:
     1. Parameter validation and processing
     2. Service coordination
     3. Error handling and user feedback
     4. Schema validation
+    5. Arize client management
+
+    Implementation Guidelines:
+        1. All public methods should have comprehensive error handling
+        2. User feedback should be clear and actionable
+        3. Configuration should be validated early
+        4. Errors should include detailed context
+        5. Long-running operations should provide progress updates
     """
 
     def __init__(self) -> None:
-        """Initialize the command handler."""
+        """Initialize the command handler.
+
+        This sets up the schema validator and Arize client needed for
+        command execution. Raises appropriate errors if initialization fails.
+
+        Raises:
+            HandlerError: If handler initialization fails
+            ConfigurationError: If configuration is invalid
+        """
         self._schema_validator = SchemaValidator()
         self._arize_client = self._initialize_arize_client()
 
@@ -46,16 +90,24 @@ class Handler:
     ) -> None:
         """Handle the run experiment command.
 
+        This method:
+        1. Validates all input parameters
+        2. Verifies dataset existence
+        3. Creates and configures the task
+        4. Sets up evaluators
+        5. Runs the experiment
+        6. Provides feedback on the result
+
         Args:
-            experiment_name: Name of the experiment
-            dataset_name: Name of the dataset
-            task_name: Name of the task
+            experiment_name: Name of the experiment to run
+            dataset_name: Name of the dataset to use
+            task_name: Name of the task to execute
             raw_tags: Optional list of key=value tag strings
-            evaluator_names: Optional list of evaluator names
+            evaluator_names: Optional list of evaluator names to use
 
         Raises:
             HandlerError: If command execution fails
-            ConfigurationError: If command configuration fails
+            ConfigurationError: If command configuration is invalid
         """
         # Parse tags
         parsed_tags = self._parse_raw_tags(raw_tags)

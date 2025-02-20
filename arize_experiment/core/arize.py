@@ -1,5 +1,28 @@
 """
 Enhanced Arize API client with better error handling and configuration.
+
+This module provides an enhanced client for interacting with the Arize AI
+platform. It includes:
+1. Robust error handling
+2. Structured configuration
+3. Type safety
+4. Logging integration
+5. Dataset management
+6. Experiment execution
+
+Example:
+    ```python
+    from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
+
+    config = ArizeClientConfiguration(
+        api_key="your_api_key",
+        developer_key="your_dev_key",
+        space_id="your_space_id"
+    )
+
+    client = ArizeClient(config)
+    client.create_dataset("my_dataset", data)
+    ```
 """
 
 import logging
@@ -17,7 +40,26 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ArizeClientConfiguration:
-    """Configuration for the Arize client."""
+    """Configuration for the Arize client.
+
+    This class encapsulates all configuration needed to initialize an Arize
+    client. It ensures all required credentials and settings are provided
+    and validated.
+
+    Attributes:
+        api_key (str): The Arize API key for authentication
+        developer_key (str): The developer key for API access
+        space_id (str): The Arize space ID to work in
+
+    Example:
+        ```python
+        config = ArizeClientConfiguration(
+            api_key="your_api_key",
+            developer_key="your_dev_key",
+            space_id="your_space_id"
+        )
+        ```
+    """
 
     def __init__(
         self,
@@ -25,6 +67,23 @@ class ArizeClientConfiguration:
         developer_key: str,
         space_id: str,
     ):
+        """Initialize the configuration.
+
+        Args:
+            api_key: The Arize API key for authentication
+            developer_key: The developer key for API access
+            space_id: The Arize space ID to work in
+
+        Raises:
+            ValueError: If any required parameter is empty or invalid
+        """
+        if not api_key:
+            raise ValueError("API key cannot be empty")
+        if not developer_key:
+            raise ValueError("Developer key cannot be empty")
+        if not space_id:
+            raise ValueError("Space ID cannot be empty")
+
         self.api_key = api_key
         self.developer_key = developer_key
         self.space_id = space_id

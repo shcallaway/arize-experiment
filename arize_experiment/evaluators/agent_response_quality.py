@@ -57,7 +57,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        model: str = "gpt-4",
+        model: str = "gpt-4o-mini",
         temperature: float = 0,
         api_key: Optional[str] = None,
     ):
