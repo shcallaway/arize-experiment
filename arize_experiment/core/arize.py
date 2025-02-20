@@ -6,7 +6,9 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional
 
+import pandas as pd
 from arize.experimental.datasets import ArizeDatasetsClient
+from arize.experimental.datasets.utils.constants import GENERATIVE
 
 from arize_experiment.core.errors import ArizeClientError
 
@@ -84,6 +86,37 @@ class ArizeClient:
             logger.debug(f"Error creating Arize datasets client: {e}")
             raise ArizeClientError(
                 "Failed to create Arize datasets client", details={"error": str(e)}
+            )
+
+    def create_dataset(
+        self,
+        dataset_name: str,
+        data: pd.DataFrame,
+    ) -> Any:
+        """Create a dataset.
+
+        Args:
+            dataset_name: Name of the dataset
+            data: Data to create the dataset with
+
+        Returns:
+            Dataset ID
+
+        Raises:
+            ArizeClientError: If dataset creation fails
+        """
+        try:
+            logger.debug(f"Creating dataset: {dataset_name}")
+            return self._client.create_dataset(
+                space_id=self._space_id,
+                dataset_name=dataset_name,
+                dataset_type=GENERATIVE,
+                data=data,
+            )
+        except Exception as e:
+            logger.debug(f"Error creating dataset: {e}")
+            raise ArizeClientError(
+                "Failed to create dataset", details={"error": str(e)}
             )
 
     def get_dataset(self, dataset_name: str) -> Any:
