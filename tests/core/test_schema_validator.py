@@ -4,8 +4,8 @@ from typing import Dict
 from unittest.mock import MagicMock
 
 from arize_experiment.core.schema import ColumnSchema, DatasetSchema, DataType
+from arize_experiment.core.schema_validator import SchemaValidator
 from arize_experiment.core.task import Task, TaskResult
-from arize_experiment.core.validation import SchemaValidator
 
 
 class MockTask(Task):

@@ -37,9 +37,9 @@ from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
 from arize_experiment.core.errors import ConfigurationError, HandlerError
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
+from arize_experiment.core.schema_validator import SchemaValidator
 from arize_experiment.core.task import Task
 from arize_experiment.core.task_registry import TaskRegistry
-from arize_experiment.core.validation import SchemaValidator
 
 logger = logging.getLogger(__name__)
 

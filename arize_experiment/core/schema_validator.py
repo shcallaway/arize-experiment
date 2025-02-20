@@ -14,7 +14,7 @@ The validation framework:
 
 Example:
     ```python
-    from arize_experiment.core.validation import SchemaValidator
+    from arize_experiment.core.schema_validator import SchemaValidator
     from arize_experiment.core.task import Task
 
     validator = SchemaValidator()
