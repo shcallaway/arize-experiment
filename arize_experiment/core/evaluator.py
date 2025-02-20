@@ -24,7 +24,7 @@ Example:
         def name(self) -> str:
             return "accuracy_evaluator"
 
-        def evaluate(self, output: Any) -> EvaluationResult:
+        def evaluate(self, output: TaskResult) -> EvaluationResult:
             accuracy = self._calculate_accuracy(output)
             return EvaluationResult(
                 score=accuracy,
@@ -32,7 +32,7 @@ Example:
                 metadata={"threshold": self.threshold}
             )
 
-        def __call__(self, output: Any) -> EvaluationResult:
+        def __call__(self, output: TaskResult) -> EvaluationResult:
             return self.evaluate(output)
     ```
 """
@@ -41,6 +41,8 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from arize.experimental.datasets.experiments.types import EvaluationResult
+
+from arize_experiment.core.task import TaskResult
 
 
 class BaseEvaluator(ABC):
@@ -108,7 +110,7 @@ class BaseEvaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, output: Any) -> EvaluationResult:
+    def evaluate(self, output: TaskResult) -> EvaluationResult:
         """Evaluate the given output and return a standardized result.
 
         Args:
@@ -129,7 +131,7 @@ class BaseEvaluator(ABC):
         pass
 
     @abstractmethod
-    def __call__(self, output: Any) -> EvaluationResult:
+    def __call__(self, output: TaskResult) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
 
         This allows evaluators to be used directly as functions.
