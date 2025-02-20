@@ -33,16 +33,11 @@ def test_default_url() -> None:
 @pytest.mark.parametrize(
     "input_data",
     [
-        {"messages": "not a list"},
-        {"messages": 123},
-        {"messages": None},
-        {"messages": {}},
-        {"messages": [123]},  # Invalid message type
-        {"messages": [{"role": "user"}]},  # Missing content
-        {"messages": [{"content": "hello"}]},  # Missing role
-        {
-            "messages": [{"role": "user", "content": "hello"}, "not a dict"]
-        },  # Invalid message in list
+        {"input": 123},  # Not a string
+        {"input": None},  # None value
+        {"input": []},  # List instead of string
+        {"input": {}},  # Dict instead of string
+        {"wrong_key": "hello"},  # Missing input key
     ],
 )
 def test_execute_invalid_input_format(input_data: Dict[str, Any]) -> None:
@@ -67,14 +62,10 @@ def test_successful_request(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    messages = [
-        {"role": "user", "content": "Hello, how are you?"},
-        {"role": "assistant", "content": "I'm doing well, thank you!"},
-        {"role": "user", "content": "What is the weather in Tokyo?"},
-    ]
-    input_data = {"input": messages}
+    input_text = "What is the weather in Tokyo?"
+    input_data = {"input": input_text}
 
-    expected_payload = {"agent_id": "test", "conversation": messages}
+    expected_payload = {"agent_id": "test", "text": input_text}
 
     result = task.execute(input_data)
 
@@ -99,7 +90,7 @@ def test_request_error_handling(mock_post: Mock) -> None:
     mock_post.side_effect = RequestException("Connection error")
 
     task = ExecuteAgentTask()
-    input_data = {"input": [{"role": "user", "content": "Hello"}]}
+    input_data = {"input": "Hello"}
 
     result = task.execute(input_data)
 
@@ -119,7 +110,7 @@ def test_http_error_handling(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    input_data = {"input": [{"role": "user", "content": "Hello"}]}
+    input_data = {"input": "Hello"}
 
     result = task.execute(input_data)
 
@@ -139,7 +130,7 @@ def test_json_decode_error(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    input_data = {"input": [{"role": "user", "content": "Hello"}]}
+    input_data = {"input": "Hello"}
 
     result = task.execute(input_data)
 

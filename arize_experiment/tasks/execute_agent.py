@@ -1,5 +1,6 @@
 """Execute an agent by calling a web server."""
 
+import json
 import logging
 import os
 from typing import Any, Dict
@@ -24,16 +25,17 @@ class ExecuteAgentTask(Task):
     """
 
     def __init__(
-        self, *args: Any, url: str = "http://localhost:8080", **kwargs: Any
+        self, *args: Any, base_url: str = "http://localhost:8080", **kwargs: Any
     ) -> None:
         """Initialize the execute agent task.
 
         Args:
-            url: The endpoint URL where the agent is running
+            base_url: The base URL where the agent is running
             *args: Variable length argument list
             **kwargs: Arbitrary keyword arguments
         """
-        self.url = os.getenv("AGENT_EXECUTION_URL", url)
+        base_url = os.getenv("AGENT_EXECUTION_URL", base_url)
+        self.url = f"{base_url}/execute"
 
     @property
     def name(self) -> str:
@@ -55,27 +57,12 @@ class ExecuteAgentTask(Task):
             columns={
                 "input": ColumnSchema(
                     name="input",
-                    types=[DataType.LIST],
-                    nested_schema={
-                        "role": ColumnSchema(
-                            name="role",
-                            types=[DataType.STRING],
-                            required=True,
-                            description=(
-                                "The role of the speaker (e.g. 'user' or 'assistant')"
-                            ),
-                        ),
-                        "content": ColumnSchema(
-                            name="content",
-                            types=[DataType.STRING],
-                            required=True,
-                            description="The message content",
-                        ),
-                    },
-                    description="List of messages in the conversation",
+                    types=[DataType.STRING],
+                    required=True,
+                    description="A JSON string containing the conversation history",
                 )
             },
-            description="Dataset containing conversations for agent execution",
+            description="Dataset containing text inputs for agent execution",
         )
 
     def execute(self, Input: Dict[str, Any]) -> TaskResult:
@@ -83,9 +70,7 @@ class ExecuteAgentTask(Task):
 
         Args:
             Input: Dictionary containing:
-                - input: List of message dictionaries, where each message has:
-                    - role: string indicating the speaker (e.g. "user" or "assistant")
-                    - content: string containing the message content
+                - input: String containing the input text for the agent
 
         Returns:
             TaskResult containing:
@@ -106,8 +91,8 @@ class ExecuteAgentTask(Task):
                     error="Input must be a dictionary with 'input' key",
                 )
 
-            messages = Input["input"]
-            if not isinstance(messages, list):
+            conversation = json.loads(Input["input"])
+            if not isinstance(conversation, list):
                 return TaskResult(
                     input=Input,
                     output=None,
@@ -115,26 +100,9 @@ class ExecuteAgentTask(Task):
                     error="input must be a list",
                 )
 
-            # Validate message format
-            for message in messages:
-                if not isinstance(message, dict):
-                    return TaskResult(
-                        input=Input,
-                        output=None,
-                        metadata={"url": self.url},
-                        error="Each message must be a dictionary",
-                    )
-                if "role" not in message or "content" not in message:
-                    return TaskResult(
-                        input=Input,
-                        output=None,
-                        metadata={"url": self.url},
-                        error="Each message must have 'role' and 'content' fields",
-                    )
-
             # Make the API request
             response = requests.post(
-                self.url, json={"agent_id": "test", "conversation": messages}
+                self.url, json={"agent_id": "test", "conversation": conversation}
             )
             response.raise_for_status()
             output = response.json()
