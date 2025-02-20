@@ -1,5 +1,6 @@
 """Tests for the execute agent task."""
 
+import json
 from typing import Any, Dict
 from unittest.mock import Mock, patch
 
@@ -12,37 +13,36 @@ from arize_experiment.tasks.execute_agent import ExecuteAgentTask
 
 def test_task_initialization() -> None:
     """Test that the task initializes with the correct URL."""
-    url = "http://localhost:8000/agent"
-    task = ExecuteAgentTask(url=url)
-    assert task.url == url
+    base_url = "http://localhost:8000"
+    task = ExecuteAgentTask(base_url=base_url)
+    assert task.url == f"{base_url}/execute"
     assert task.name == "execute_agent"
 
 
 def test_task_name() -> None:
     """Test the task name property."""
-    task = ExecuteAgentTask(url="http://test.com")
+    task = ExecuteAgentTask()
     assert task.name == "execute_agent"
 
 
 def test_default_url() -> None:
     """Test that the default URL is set correctly."""
     task = ExecuteAgentTask()
-    assert task.url == "http://localhost:8080"
+    assert task.url == "http://localhost:8080/execute"
 
 
 @pytest.mark.parametrize(
     "input_data",
     [
-        {"input": 123},  # Not a string
-        {"input": None},  # None value
-        {"input": []},  # List instead of string
-        {"input": {}},  # Dict instead of string
-        {"wrong_key": "hello"},  # Missing input key
+        {"input": "not_json"},  # Invalid JSON string
+        {"input": "123"},  # JSON but not a list
+        {"input": "[]"},  # Empty list
+        {"wrong_key": "[]"},  # Missing input key
     ],
 )
 def test_execute_invalid_input_format(input_data: Dict[str, Any]) -> None:
     """Test task execution with invalid input formats."""
-    task = ExecuteAgentTask(url="http://test.com")
+    task = ExecuteAgentTask()
     result = task.execute(input_data)
 
     assert not result.success
@@ -62,10 +62,10 @@ def test_successful_request(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    input_text = "What is the weather in Tokyo?"
-    input_data = {"input": input_text}
+    conversation = [{"role": "user", "content": "What is the weather in Tokyo?"}]
+    input_data = {"input": json.dumps(conversation)}
 
-    expected_payload = {"agent_id": "test", "text": input_text}
+    expected_payload = {"agent_id": "test", "conversation": conversation}
 
     result = task.execute(input_data)
 
@@ -90,7 +90,8 @@ def test_request_error_handling(mock_post: Mock) -> None:
     mock_post.side_effect = RequestException("Connection error")
 
     task = ExecuteAgentTask()
-    input_data = {"input": "Hello"}
+    conversation = [{"role": "user", "content": "Hello"}]
+    input_data = {"input": json.dumps(conversation)}
 
     result = task.execute(input_data)
 
@@ -110,7 +111,8 @@ def test_http_error_handling(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    input_data = {"input": "Hello"}
+    conversation = [{"role": "user", "content": "Hello"}]
+    input_data = {"input": json.dumps(conversation)}
 
     result = task.execute(input_data)
 
@@ -130,7 +132,8 @@ def test_json_decode_error(mock_post: Mock) -> None:
     mock_post.return_value = mock_response
 
     task = ExecuteAgentTask()
-    input_data = {"input": "Hello"}
+    conversation = [{"role": "user", "content": "Hello"}]
+    input_data = {"input": json.dumps(conversation)}
 
     result = task.execute(input_data)
 

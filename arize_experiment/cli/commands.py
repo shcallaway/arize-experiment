@@ -5,7 +5,7 @@ CLI command definitions for arize-experiment.
 import logging
 import os
 import sys
-from typing import Tuple
+from typing import List
 
 import click
 from dotenv import load_dotenv
@@ -104,8 +104,8 @@ def run(
     name: str,
     dataset: str,
     task: str,
-    tag: Tuple[str, ...],
-    evaluator: Tuple[str, ...],
+    tag: List[str],
+    evaluator: List[str],
 ) -> None:
     """Run an experiment on Arize.
 
