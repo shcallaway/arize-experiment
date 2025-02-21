@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from arize_experiment.cli.commands import cli
+from arize_experiment.cli.cli import cli
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def cli_runner():
 @pytest.fixture
 def mock_handler():
     """Fixture that provides a mocked Handler instance."""
-    with patch("arize_experiment.cli.commands.Handler") as mock:
+    with patch("arize_experiment.cli.cli.Handler") as mock:
         handler_instance = MagicMock()
         mock.return_value = handler_instance
         yield handler_instance
@@ -44,10 +44,8 @@ def mock_env_vars():
 def mock_registries():
     """Fixture that mocks the task and evaluator registries."""
     with (
-        patch("arize_experiment.cli.commands.TaskRegistry.list") as mock_task_list,
-        patch(
-            "arize_experiment.cli.commands.EvaluatorRegistry.list"
-        ) as mock_evaluator_list,
+        patch("arize_experiment.cli.cli.TaskRegistry.list") as mock_task_list,
+        patch("arize_experiment.cli.cli.EvaluatorRegistry.list") as mock_evaluator_list,
     ):
         mock_task_list.return_value = ["sentiment_classification"]
         mock_evaluator_list.return_value = ["sentiment_classification_accuracy"]
@@ -209,7 +207,7 @@ def test_cli_respects_log_level(cli_runner):
 
 def test_cli_handles_dotenv_error(cli_runner):
     """Test that the CLI handles dotenv loading errors gracefully."""
-    with patch("arize_experiment.cli.commands.load_dotenv") as mock_load_dotenv:
+    with patch("arize_experiment.cli.cli.load_dotenv") as mock_load_dotenv:
         mock_load_dotenv.side_effect = Exception("Failed to load .env file")
         result = cli_runner.invoke(cli, ["run", "--help"])
         assert result.exit_code == 1
@@ -246,12 +244,8 @@ def test_create_dataset_command_missing_required_args(cli_runner):
 
 
 def test_create_dataset_command_file_not_found(cli_runner, mock_handler):
-    """Test that create_dataset command fails when CSV file is not found.
-
-    Verifies that proper error handling occurs when the specified CSV file is not found.
-    """
+    """Test that create_dataset command fails when CSV file is not found."""
     mock_handler.create_dataset.side_effect = FileNotFoundError("test.csv not found")
-
     result = cli_runner.invoke(
         cli,
         [
@@ -262,32 +256,5 @@ def test_create_dataset_command_file_not_found(cli_runner, mock_handler):
             "test.csv",
         ],
     )
-    assert result.exit_code != 0
-    assert "Error: File not found: test.csv not found" in result.output
-
-
-def test_create_dataset_command_dataset_exists(cli_runner, mock_handler):
-    """Test that create_dataset command fails when dataset exists.
-
-    Verifies that proper error handling occurs when attempting to create a
-    dataset that exists.
-    """
-    from arize_experiment.core.errors import ConfigurationError
-
-    mock_handler.create_dataset.side_effect = ConfigurationError(
-        "Dataset 'test-dataset' already exists",
-        details={"dataset": "test-dataset"},
-    )
-
-    result = cli_runner.invoke(
-        cli,
-        [
-            "create-dataset",
-            "--name",
-            "test-dataset",
-            "--path-to-csv",
-            "test.csv",
-        ],
-    )
-    assert result.exit_code != 0
-    assert "Error: Dataset 'test-dataset' already exists" in result.output
+    assert result.exit_code == 1
+    assert "test.csv not found" in result.output

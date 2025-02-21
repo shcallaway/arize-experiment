@@ -1,4 +1,8 @@
-from setuptools import setup, find_namespace_packages
+"""
+Setup configuration for arize-experiment.
+"""
+
+from setuptools import find_namespace_packages, setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -34,7 +38,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "arize-experiment=arize_experiment.cli.commands:main",
+            "arize-experiment=arize_experiment.cli.cli:main",
         ],
     },
 )
