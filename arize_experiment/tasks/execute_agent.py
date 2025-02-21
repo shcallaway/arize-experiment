@@ -92,7 +92,7 @@ class ExecuteAgentTask(Task):
                     error="dataset_row must be a dictionary with 'input' key",
                 )
 
-            conversation = json.loads(dataset_row["input"])
+            conversation: Any = json.loads(dataset_row["input"])
 
             if not isinstance(conversation, list):
                 return TaskResult(

@@ -185,7 +185,7 @@ def test_callable_interface(mock_openai: Mock) -> None:
 
     # Test with dictionary
     dict_result = {
-        "input": {"input": "This is great!"},
+        "dataset_row": {"input": "This is great!"},
         "output": "positive",
         "metadata": {},
     }

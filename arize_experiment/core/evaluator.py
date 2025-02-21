@@ -134,7 +134,7 @@ class BaseEvaluator(ABC):
         pass
 
     @final
-    def __call__(self, task_result: TaskResult | dict) -> EvaluationResult:
+    def __call__(self, task_result: TaskResult | dict[str, Any]) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
 
         This allows evaluators to be used directly as functions.

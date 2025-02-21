@@ -184,7 +184,7 @@ def test_call_with_dict(mock_openai_client):
 
         result = evaluator(
             {
-                "input": {"conversation": ["Test message"]},
+                "dataset_row": {"conversation": ["Test message"]},
                 "output": "Test response",
                 "metadata": {},
             }

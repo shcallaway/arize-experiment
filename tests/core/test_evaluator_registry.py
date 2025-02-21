@@ -25,9 +25,6 @@ def test_evaluator_class():
         def evaluate(self, output: Any) -> EvaluationResult:
             return EvaluationResult(score=1.0, label="test")
 
-        def __call__(self, output: Any) -> EvaluationResult:
-            return self.evaluate(output)
-
     return TestEvaluator
 
 
@@ -57,9 +54,6 @@ def test_evaluator_registration_decorator():
 
         def evaluate(self, output: Any) -> EvaluationResult:
             return EvaluationResult(score=1.0, label="test")
-
-        def __call__(self, output: Any) -> EvaluationResult:
-            return self.evaluate(output)
 
     # Verify it's registered
     assert "decorator_test" in EvaluatorRegistry._evaluators
