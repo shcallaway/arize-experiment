@@ -285,30 +285,45 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
                 explanation=f"Evaluation failed: {str(e)}",
             )
 
-    def __call__(self, task_result: Any) -> EvaluationResult:
-        """Make the evaluator callable by delegating to evaluate.
+    # def __call__(self, task_result: Any) -> EvaluationResult:
+    #     """Make the evaluator callable by delegating to evaluate.
 
-        This allows the evaluator to be used directly as a function.
-        If given a dictionary instead of a TaskResult, it will be
-        converted automatically.
+    #     This allows the evaluator to be used directly as a function.
+    #     If given a dictionary instead of a TaskResult, it will be
+    #     converted automatically.
 
-        Args:
-            task_result: TaskResult or dict to evaluate
+    #     Args:
+    #         task_result: TaskResult object, dict, or output value
 
-        Returns:
-            EvaluationResult: The evaluation result
+    #     Returns:
+    #         EvaluationResult with scores and metadata
 
-        Raises:
-            EvaluatorError: If evaluation fails
-            ValueError: If input format is invalid
-        """
-        # Convert dictionary to TaskResult if needed
-        if isinstance(task_result, dict):
-            task_result = TaskResult(
-                input=task_result["input"],
-                output=task_result["output"],
-                metadata=task_result.get("metadata", {}),
-                error=task_result.get("error"),
-            )
+    #     Raises:
+    #         EvaluatorError: If evaluation fails
+    #         ValueError: If input format is invalid
+    #     """
+    #     if task_result is None:
+    #         return EvaluationResult(
+    #             score=0.0,
+    #             label="error",
+    #             explanation="Task result was None"
+    #         )
 
-        return self.evaluate(task_result)
+    #     # If task_result is a string (direct output), wrap it
+    #     if isinstance(task_result, str):
+    #         task_result = TaskResult(
+    #             input={"input": task_result},
+    #             output=task_result,
+    #             metadata={},
+    #         )
+
+    #     # If it's a dictionary, convert it
+    #     elif isinstance(task_result, dict):
+    #         task_result = TaskResult(
+    #             input=task_result.get("input", {}),
+    #             output=task_result.get("output"),
+    #             metadata=task_result.get("metadata", {}),
+    #             error=task_result.get("error"),
+    #         )
+
+    #     return self.evaluate(task_result)

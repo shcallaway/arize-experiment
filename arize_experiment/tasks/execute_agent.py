@@ -65,11 +65,11 @@ class ExecuteAgentTask(Task):
             description="Dataset containing text inputs for agent execution",
         )
 
-    def execute(self, Input: Dict[str, Any]) -> TaskResult:
+    def execute(self, dataset_row: Dict[str, Any]) -> TaskResult:
         """Execute the agent on input text.
 
         Args:
-            Input: Dictionary containing:
+            dataset_row: Dictionary containing:
                 - input: String containing the input text for the agent
 
         Returns:
@@ -81,67 +81,73 @@ class ExecuteAgentTask(Task):
         Raises:
             TaskError: If the HTTP request fails or agent processing fails
         """
+        # Create input from dataset row.
+        # If there is no input inside the dataset row, default to row itself.
+        input = {"input": dataset_row.get("input", dataset_row)}
+
+        # Parse the input JSON string
+        conversation = None
         try:
-            # Validate input format
-            if "input" not in Input:
-                return TaskResult(
-                    input=Input,
-                    output=None,
-                    metadata={"url": self.url},
-                    error="Input must be a dictionary with 'input' key",
-                )
+            conversation = json.loads(input["input"])
+        except Exception as e:
+            error_msg = f"Failed to parse input: {str(e)}"
+            logger.error(error_msg)
+            return TaskResult(
+                input=input,
+                output=None,
+                metadata={"url": self.url},
+                error=error_msg,
+            )
 
-            conversation = json.loads(Input["input"])
-            if not isinstance(conversation, list):
-                return TaskResult(
-                    input=Input,
-                    output=None,
-                    metadata={"url": self.url},
-                    error="input must be a list",
-                )
+        # Validate that the conversation data is a list
+        if not isinstance(conversation, list):
+            error_msg = "Conversation is not a list"
+            logger.error(error_msg)
+            return TaskResult(
+                input=input,
+                output=None,
+                metadata={"url": self.url},
+                error=error_msg,
+            )
 
-            # Make the API request
+        # Make the API request
+        response = None
+        try:
             response = requests.post(
                 self.url, json={"agent_id": "test", "conversation": conversation}
             )
             response.raise_for_status()
-            output = response.json()
-
-            # Return successful result
-            return TaskResult(
-                input=Input,
-                output=output,
-                metadata={
-                    "url": self.url,
-                    "status_code": response.status_code,
-                    "headers": dict(response.headers),
-                },
-            )
-
-        except RequestException as e:
+        except Exception as e:
             error_msg = f"Failed to execute agent request: {str(e)}"
             logger.error(error_msg)
             return TaskResult(
-                input=Input,
+                input=input,
                 output=None,
                 metadata={"url": self.url},
                 error=error_msg,
             )
-        except ValueError as e:
-            error_msg = f"Invalid JSON response: {str(e)}"
-            logger.error(error_msg)
-            return TaskResult(
-                input=Input,
-                output=None,
-                metadata={"url": self.url},
-                error=error_msg,
-            )
+
+        # Parse the response body as JSON
+        output = None
+        try:
+            output = response.json()
         except Exception as e:
-            error_msg = f"Agent execution failed: {str(e)}"
+            error_msg = f"Failed to parse response: {str(e)}"
             logger.error(error_msg)
             return TaskResult(
-                input=Input,
+                input=input,
                 output=None,
                 metadata={"url": self.url},
                 error=error_msg,
             )
+
+        # Return successful result
+        return TaskResult(
+            input=input,
+            output=output,
+            metadata={
+                "url": self.url,
+                "status_code": response.status_code,
+                "headers": dict(response.headers),
+            },
+        )

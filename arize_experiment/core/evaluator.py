@@ -38,7 +38,7 @@ Example:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, final
 
 from arize.experimental.datasets.experiments.types import EvaluationResult
 
@@ -82,6 +82,7 @@ class BaseEvaluator(ABC):
         """
         super().__init__()
 
+    @final
     def __str__(self) -> str:
         """Return a string representation of the evaluator.
 
@@ -90,6 +91,7 @@ class BaseEvaluator(ABC):
         """
         return self.name
 
+    @final
     def __repr__(self) -> str:
         """Return a detailed string representation of the evaluator.
 
@@ -131,21 +133,44 @@ class BaseEvaluator(ABC):
         """
         pass
 
-    @abstractmethod
-    def __call__(self, output: TaskResult) -> EvaluationResult:
+    @final
+    def __call__(self, task_result: Any) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
 
-        This allows evaluators to be used directly as functions.
+        This allows the evaluator to be used directly as a function.
+        If given a dictionary instead of a TaskResult, it will be
+        converted automatically.
 
         Args:
-            output: TaskResult containing the task execution result with input,
-                   output, metadata and any error information. Evaluators should
-                   document their expected TaskResult structure in their implementation.
+            task_result: TaskResult object, dict, or output value
 
         Returns:
-            EvaluationResult: The evaluation result
+            EvaluationResult with scores and metadata
 
         Raises:
             EvaluatorError: If evaluation fails
+            ValueError: If input format is invalid
         """
-        pass
+        if task_result is None:
+            return EvaluationResult(
+                score=0.0, label="error", explanation="No task result"
+            )
+
+        # If task_result is a string (direct output), wrap it
+        if isinstance(task_result, str):
+            task_result = TaskResult(
+                input={"input": task_result},
+                output=task_result,
+                metadata={},
+            )
+
+        # If it's a dictionary, convert it
+        elif isinstance(task_result, dict):
+            task_result = TaskResult(
+                input=task_result.get("input", {}),
+                output=task_result.get("output"),
+                metadata=task_result.get("metadata", {}),
+                error=task_result.get("error"),
+            )
+
+        return self.evaluate(task_result)

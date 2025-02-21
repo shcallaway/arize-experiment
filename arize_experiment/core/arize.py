@@ -175,9 +175,8 @@ class ArizeClient(ArizeClientProtocol):
             )
         except Exception as e:
             logger.debug(f"Error creating Arize datasets client: {e}")
-            raise ArizeClientError(
-                "Failed to create Arize datasets client", details={"error": str(e)}
-            )
+            error_msg = "Failed to create Arize datasets client"
+            raise ArizeClientError(error_msg, details={"error": str(e)})
 
     def create_dataset(
         self,
@@ -206,9 +205,8 @@ class ArizeClient(ArizeClientProtocol):
             )
         except Exception as e:
             logger.debug(f"Error creating dataset: {e}")
-            raise ArizeClientError(
-                "Failed to create dataset", details={"error": str(e)}
-            )
+            error_msg = f"Failed to create dataset '{dataset_name}'"
+            raise ArizeClientError(error_msg, details={"error": str(e)})
 
     def get_dataset(self, dataset_name: str) -> Any:
         """Get a dataset by name.
@@ -255,8 +253,8 @@ class ArizeClient(ArizeClientProtocol):
         """
         try:
             logger.debug(
-                f"Running experiment: {experiment_name} "
-                f"on dataset: {dataset_name} in space: {self._space_id}"
+                f"Running experiment '{experiment_name}' "
+                f"on dataset '{dataset_name}' in space '{self._space_id}'"
             )
             return self._client.run_experiment(
                 space_id=self._space_id,
@@ -269,7 +267,7 @@ class ArizeClient(ArizeClientProtocol):
             logger.debug(f"Error running experiment: {e}")
             error_msg = (
                 f"Failed to run experiment '{experiment_name}' "
-                f"on dataset '{dataset_name}'"
+                f"on dataset '{dataset_name}' in space '{self._space_id}'"
             )
             raise ArizeClientError(
                 error_msg,
@@ -296,8 +294,8 @@ class ArizeClient(ArizeClientProtocol):
         """
         try:
             logger.debug(
-                f"Getting experiment: {experiment_name} "
-                f"from dataset: {dataset_name} in space: {self._space_id}"
+                f"Getting experiment '{experiment_name}' "
+                f"from dataset '{dataset_name}' in space '{self._space_id}'"
             )
             return self._client.get_experiment(
                 space_id=self._space_id,

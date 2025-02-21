@@ -165,7 +165,7 @@ class SentimentClassificationTask(Task):
             description="Dataset containing text for sentiment classification",
         )
 
-    def execute(self, Input: Dict[str, Any]) -> TaskResult:
+    def execute(self, dataset_row: Dict[str, Any]) -> TaskResult:
         """Execute the sentiment classification task.
 
         This method:
@@ -190,54 +190,44 @@ class SentimentClassificationTask(Task):
             TaskError: If input is invalid or classification fails
             ValueError: If input format is incorrect
         """
+        # Create input from dataset row.
+        # If there is no input inside the dataset row, default to row itself.
+        input = {"input": dataset_row.get("input", dataset_row)}
+
+        # Validate that the input is a string
+        user_text = dataset_row["input"]
+        if not isinstance(user_text, str):
+            return TaskResult(
+                input=input,
+                output=None,
+                error="Input must be a string",
+                metadata={
+                    "model": self.model,
+                    "temperature": self.temperature,
+                },
+            )
+
         try:
-            # Extract input from Input.
-            # This is a little confusing, but it is necessary b/c the dataset example
-            # is passed to the execute method as the "Input" param, and this param
-            # contains the entire example in dict format. Within the example dict,
-            # there is an "input" key which contains the text to classify.
-            if "input" not in Input:
-                return TaskResult(
-                    input=Input,
-                    output=None,
-                    error="Input must be a dictionary with 'input' key",
-                    metadata={
-                        "model": self.model,
-                        "temperature": self.temperature,
-                    },
-                )
-
-            input = Input["input"]
-            if not isinstance(input, str):
-                return TaskResult(
-                    input=Input,
-                    output=None,
-                    error="Input must be a string",
-                    metadata={
-                        "model": self.model,
-                        "temperature": self.temperature,
-                    },
-                )
-
             # Call OpenAI API
             response: ChatCompletion = self._client.chat.completions.create(
                 model=self.model,
                 temperature=self.temperature,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": input},
+                    {"role": "user", "content": user_text},
                 ],
             )
 
             # Parse and return result
             content = response.choices[0].message.content
+
             if content is None:
                 raise TaskError("LLM returned empty response")
 
             result = self._parse_llm_output(content)
 
             return TaskResult(
-                input=Input,
+                input=input,
                 output=result,
                 metadata={
                     "model": self.model,
@@ -248,7 +238,7 @@ class SentimentClassificationTask(Task):
         except Exception as e:
             logger.error(f"Sentiment classification failed: {str(e)}")
             return TaskResult(
-                input=Input,
+                input=dataset_row,
                 output=None,
                 error=f"Sentiment classification failed: {str(e)}",
                 metadata={

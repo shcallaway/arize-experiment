@@ -78,11 +78,11 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
         """Get the evaluator name."""
         return "agent_response_quality"
 
-    def _parse_llm_output(self, text: str) -> Tuple[float, str]:
+    def _parse_chat_completion_content(self, content: str) -> Tuple[float, str]:
         """Parse the LLM output to extract the score and explanation.
 
         Args:
-            text: Raw LLM output text
+            content: Raw LLM output content
 
         Returns:
             Tuple of (score: float, explanation: str)
@@ -91,7 +91,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             ValueError: If the output cannot be parsed
         """
         try:
-            lines = text.strip().split("\n")
+            lines = content.strip().split("\n")
             if len(lines) < 2:
                 raise ValueError("Output must contain score and explanation")
 
@@ -130,7 +130,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             - label: String representation of the score
             - explanation: Human-readable explanation of the evaluation
         """
-        logger.info("Evaluating agent response quality")
+        logger.info("Starting evaluator")
         logger.debug(f"Task result: {task_result}")
 
         # Extract conversation context and response from task result
@@ -143,38 +143,21 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             raise ValueError("Missing agent response")
 
         try:
-            # Format conversation context
-            formatted_conversation = self._format_conversation(conversation)
-
-            messages: List[ChatCompletionMessageParam] = [
-                ChatCompletionSystemMessageParam(
-                    role="system",
-                    content=SYSTEM_PROMPT,
-                ),
-                ChatCompletionUserMessageParam(
-                    role="user",
-                    content=(
-                        f"Conversation:\n{formatted_conversation}\n\n"
-                        f"Agent Response to Evaluate:\n{agent_response}"
-                    ),
-                ),
-            ]
-
-            response: ChatCompletion = self._client.chat.completions.create(
-                model=self._model,
-                messages=messages,
-                temperature=self._temperature,
+            # Prepare chat completion messages
+            messages: List[ChatCompletionMessageParam] = (
+                self._prepare_chat_completion_messages(conversation, agent_response)
             )
 
-            content = response.choices[0].message.content
-            if content is None:
-                raise ValueError("LLM returned empty response")
+            # Create chat completion
+            content = self._create_chat_completion(messages)
 
-            score, explanation = self._parse_llm_output(content)
+            # Parse chat completion content into score and explanation
+            score, explanation = self._parse_chat_completion_content(content)
 
             # Convert score to a descriptive label
             label = self._determine_label(score)
 
+            # Return evaluation result
             return EvaluationResult(
                 score=score,
                 label=label,
@@ -183,8 +166,71 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
         except Exception as e:
             raise ValueError(f"Agent response quality evaluation failed: {str(e)}")
 
-    def _format_conversation(self, conversation: List[str]) -> str:
-        """Format the conversation for the LLM.
+    def _create_chat_completion(
+        self, messages: List[ChatCompletionMessageParam]
+    ) -> str:
+        """Create a chat completion.
+
+        Args:
+            messages: The messages to create the chat completion with
+
+        Returns:
+            The content of the chat completion
+        """
+        logger.debug("Creating chat completion")
+
+        try:
+            response = self._client.chat.completions.create(
+                model=self._model,
+                messages=messages,
+                temperature=self._temperature,
+            )
+        except Exception as e:
+            raise ValueError(f"Failed to create chat completion: {str(e)}")
+
+        content = response.choices[0].message.content
+
+        if content is None:
+            raise ValueError("LLM returned empty response")
+
+        return content
+
+    def _prepare_chat_completion_messages(
+        self, conversation: List[str], agent_response: str
+    ) -> List[ChatCompletionMessageParam]:
+        """Prepare the messages for the chat completion.
+
+        Args:
+            conversation: The conversation to prepare
+            agent_response: The agent response to prepare
+
+        Returns:
+            The prepared messages
+        """
+        logger.debug("Preparing chat completion messages")
+
+        formatted_conversation = self._format_conversation_for_chat_completion_messages(
+            conversation
+        )
+
+        return [
+            ChatCompletionSystemMessageParam(
+                role="system",
+                content=SYSTEM_PROMPT,
+            ),
+            ChatCompletionUserMessageParam(
+                role="user",
+                content=(
+                    f"Conversation:\n{formatted_conversation}\n\n"
+                    f"Agent Response to Evaluate:\n{agent_response}"
+                ),
+            ),
+        ]
+
+    def _format_conversation_for_chat_completion_messages(
+        self, conversation: List[str]
+    ) -> str:
+        """Format the conversation for the chat completion messages.
 
         Args:
             conversation: The conversation to format
@@ -192,6 +238,8 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
         Returns:
             The formatted conversation
         """
+        logger.debug(f"Formatting conversation: {conversation}")
+
         return "\n".join(
             f"{'User' if i % 2 == 0 else 'Assistant'}: {msg}"
             for i, msg in enumerate(conversation)
@@ -206,6 +254,8 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
         Returns:
             Tuple of (conversation: List[str], response: str)
         """
+        logger.debug(f"Parsing task result: {task_result}")
+
         return (
             json.loads(task_result.input.get("input", "")),
             task_result.output.get("response", ""),
@@ -230,22 +280,3 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             return "poor"
         else:
             return "unacceptable"
-
-    def __call__(self, task_result: Any) -> EvaluationResult:
-        """Make the evaluator callable by delegating to evaluate.
-
-        Args:
-            task_result: The task result to evaluate
-
-        Returns:
-            EvaluationResult: The evaluation result
-        """
-        if isinstance(task_result, dict):
-            task_result = TaskResult(
-                input=task_result["input"],
-                output=task_result["output"],
-                metadata=task_result.get("metadata", {}),
-                error=task_result.get("error"),
-            )
-
-        return self.evaluate(task_result)

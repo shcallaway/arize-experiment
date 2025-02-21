@@ -8,7 +8,7 @@ way to execute tasks and handle their results.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, final
 
 from arize_experiment.core.errors import TaskError
 from arize_experiment.core.schema import DatasetSchema
@@ -34,6 +34,7 @@ class TaskResult:
     error: Optional[str] = None  # Error message if task failed
 
     @property
+    @final
     def success(self) -> bool:
         """Check if the task executed successfully.
 
@@ -86,17 +87,17 @@ class Task(ABC):
                     }
                 )
 
-            def execute(self, Input: Dict[str, Any]) -> TaskResult:
+            def execute(self, dataset_row: Dict[str, Any]) -> TaskResult:
                 try:
-                    result = self._process_input(Input["input"])
+                    result = self._process_input(dataset_row["input"])
                     return TaskResult(
-                        input=Input,
+                        input=dataset_row,
                         output=result,
                         metadata={"param1": self.param1}
                     )
                 except Exception as e:
                     return TaskResult(
-                        input=Input,
+                        input=dataset_row,
                         output=None,
                         error=str(e)
                     )
@@ -131,12 +132,12 @@ class Task(ABC):
     @abstractmethod
     def execute(
         self,
-        Input: Dict[str, Any],
+        dataset_row: Dict[str, Any],
     ) -> TaskResult:
         """Execute the task with the given input.
 
         Args:
-            Input: Dictionary containing the task's input data
+            dataset_row: Dictionary containing the task's input data
 
         Returns:
             TaskResult: The result of the task execution
@@ -146,6 +147,7 @@ class Task(ABC):
         """
         pass
 
+    @final
     def __str__(self) -> str:
         """Get a string representation of the task.
 
@@ -154,7 +156,10 @@ class Task(ABC):
         """
         return f"{self.__class__.__name__}(name={self.name})"
 
-    def __call__(self, Input: Dict[str, Any]) -> Any:
+    @final
+    def __call__(
+        self, dataset_row: Dict[str, Any], _return_task_result: bool = False
+    ) -> Any:
         """Make the task callable by delegating to execute.
 
         This allows tasks to be used directly as functions. It unwraps
@@ -162,7 +167,8 @@ class Task(ABC):
         if execution failed.
 
         Args:
-            Input: The input data for the task
+            dataset_row: The input data for the task
+            _return_task_result: If True, returns the entire TaskResult object
 
         Returns:
             The TaskResult object returned by the task's execute method
@@ -170,7 +176,11 @@ class Task(ABC):
         Raises:
             TaskError: If the task fails to execute
         """
-        result = self.execute(Input)
+        result = self.execute(dataset_row)
+
         if result.error:
+            if _return_task_result:
+                return result
             raise TaskError(result.error)
-        return result
+
+        return result if _return_task_result else result.output
