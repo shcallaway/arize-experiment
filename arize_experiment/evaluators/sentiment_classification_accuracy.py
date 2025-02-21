@@ -38,7 +38,7 @@ Example:
 """
 
 import logging
-from typing import Any, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from arize.experimental.datasets.experiments.types import EvaluationResult
 from openai import OpenAI
@@ -220,38 +220,40 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
             ValueError: If input format is invalid
         """
         try:
+            logger.info("Evaluating sentiment classification accuracy")
+            logger.debug(f"Task result: {task_result}")
+
             # Get the original input text and sentiment classification
-            input_text = task_result.input["input"]
-            predicted_sentiment = task_result.output
+            text, classification = self._parse_task_result(task_result)
 
-            if not isinstance(input_text, str):
-                raise ValueError("Input text must be a string")
-            if not isinstance(predicted_sentiment, str):
-                raise ValueError("Predicted sentiment must be a string")
+            if not isinstance(text, str):
+                raise ValueError("Text must be a string")
 
-            # Normalize sentiments for comparison
+            if not isinstance(classification, str):
+                raise ValueError("Classification must be a string")
+
+            # Normalize classification for comparison
             if not self.case_sensitive:
-                predicted_sentiment = predicted_sentiment.lower()
+                classification = classification.lower()
 
-            # Validate sentiment label
-            if self.strict_matching and predicted_sentiment not in self._valid_labels:
+            # Validate classification label
+            if self.strict_matching and classification not in self._valid_labels:
                 raise ValueError(
-                    f"Invalid sentiment label: {predicted_sentiment}. "
+                    f"Invalid sentiment label: {classification}. "
                     f"Must be one of: {self._valid_labels}"
                 )
 
             # Call OpenAI API to evaluate accuracy
-            messages = [
+            messages: List[
+                ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam
+            ] = [
                 ChatCompletionSystemMessageParam(
                     role="system",
                     content=SYSTEM_PROMPT,
                 ),
                 ChatCompletionUserMessageParam(
                     role="user",
-                    content=(
-                        f"Input: {input_text}\n"
-                        f"Classification: {predicted_sentiment}"
-                    ),
+                    content=(f"Input: {text}\n" f"Classification: {classification}"),
                 ),
             ]
 
@@ -262,53 +264,48 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
             )
 
             content = response.choices[0].message.content
+
             if content is None:
                 raise ValueError("LLM returned empty response")
 
             correct, explanation = self._parse_llm_output(content)
 
-            # Calculate score and prepare result
+            # Calculate score and label
             score = 1.0 if correct else 0.0
-            label = "correct" if correct else "incorrect"
+            label = self._determine_label(correct)
 
             return EvaluationResult(
                 score=score,
                 label=label,
                 explanation=explanation,
             )
-
         except Exception as e:
-            logger.error(f"Sentiment accuracy evaluation failed: {str(e)}")
+            error_msg = f"Sentiment accuracy evaluation failed: {str(e)}"
+            logger.error(error_msg)
             return EvaluationResult(
                 score=0.0,
                 label="error",
-                explanation=f"Evaluation failed: {str(e)}",
+                explanation=error_msg,
             )
 
-    def __call__(self, task_result: Any) -> EvaluationResult:
-        """Make the evaluator callable by delegating to evaluate.
-
-        This allows the evaluator to be used directly as a function.
-        If given a dictionary instead of a TaskResult, it will be
-        converted automatically.
+    def _determine_label(self, correct: bool) -> str:
+        """Determine the label for the given correctness.
 
         Args:
-            task_result: TaskResult or dict to evaluate
+            correct: Whether the prediction is correct
 
         Returns:
-            EvaluationResult: The evaluation result
-
-        Raises:
-            EvaluatorError: If evaluation fails
-            ValueError: If input format is invalid
+            str: The label for the given correctness
         """
-        # Convert dictionary to TaskResult if needed
-        if isinstance(task_result, dict):
-            task_result = TaskResult(
-                input=task_result["input"],
-                output=task_result["output"],
-                metadata=task_result.get("metadata", {}),
-                error=task_result.get("error"),
-            )
+        return "correct" if correct else "incorrect"
 
-        return self.evaluate(task_result)
+    def _parse_task_result(self, task_result: TaskResult) -> Tuple[str, str]:
+        """Parse the task result to extract the input text and classification.
+
+        Args:
+            task_result: TaskResult containing:
+                - dataset_row: Dict with text and expected sentiment
+        """
+        text = task_result.dataset_row["input"]
+        classification = task_result.output
+        return text, classification

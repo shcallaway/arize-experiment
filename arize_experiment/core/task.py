@@ -8,7 +8,7 @@ way to execute tasks and handle their results.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, final
 
 from arize_experiment.core.errors import TaskError
 from arize_experiment.core.schema import DatasetSchema
@@ -22,13 +22,13 @@ class TaskResult:
     It also tracks any errors that occurred during execution.
 
     Attributes:
-        input: The original input data provided to the task
+        dataset_row: The original input data provided to the task
         output: The task's output data
         metadata: Optional metadata about the execution (e.g., timing, model info)
         error: Optional error message if the task failed
     """
 
-    input: Dict[str, Any]  # The input data for the task
+    dataset_row: Dict[str, Any]  # The input data for the task
     output: Any  # The task's output
     metadata: Optional[Dict[str, Any]] = None  # Optional metadata about the execution
     error: Optional[str] = None  # Error message if task failed
@@ -131,12 +131,12 @@ class Task(ABC):
     @abstractmethod
     def execute(
         self,
-        Input: Dict[str, Any],
+        dataset_row: Dict[str, Any],
     ) -> TaskResult:
         """Execute the task with the given input.
 
         Args:
-            Input: Dictionary containing the task's input data
+            dataset_row: Dictionary containing the task's input data
 
         Returns:
             TaskResult: The result of the task execution
@@ -146,6 +146,7 @@ class Task(ABC):
         """
         pass
 
+    @final
     def __str__(self) -> str:
         """Get a string representation of the task.
 
@@ -154,6 +155,7 @@ class Task(ABC):
         """
         return f"{self.__class__.__name__}(name={self.name})"
 
+    @final
     def __call__(self, Input: Dict[str, Any]) -> Any:
         """Make the task callable by delegating to execute.
 

@@ -65,51 +65,55 @@ class ExecuteAgentTask(Task):
             description="Dataset containing text inputs for agent execution",
         )
 
-    def execute(self, Input: Dict[str, Any]) -> TaskResult:
+    def execute(self, dataset_row: Dict[str, Any]) -> TaskResult:
         """Execute the agent on input text.
 
         Args:
-            Input: Dictionary containing:
+            dataset_row: Dictionary containing:
                 - input: String containing the input text for the agent
 
         Returns:
             TaskResult containing:
-                output: The agent's response from the server
-                metadata: Processing information including request details
-                error: Any error message if the request or processing failed
+                - dataset_row: The original dataset row
+                - output: The agent's response from the server
+                - metadata: Processing information including request details
+                - error: Any error message if the request or processing failed
 
         Raises:
-            TaskError: If the HTTP request fails or agent processing fails
+            TaskError: Various reasons
         """
         try:
-            # Validate input format
-            if "input" not in Input:
+            # Validate dataset row format
+            if "input" not in dataset_row:
                 return TaskResult(
-                    input=Input,
+                    dataset_row=dataset_row,
                     output=None,
                     metadata={"url": self.url},
-                    error="Input must be a dictionary with 'input' key",
+                    error="dataset_row must be a dictionary with 'input' key",
                 )
 
-            conversation = json.loads(Input["input"])
+            conversation = json.loads(dataset_row["input"])
+
             if not isinstance(conversation, list):
                 return TaskResult(
-                    input=Input,
+                    dataset_row=dataset_row,
                     output=None,
                     metadata={"url": self.url},
-                    error="input must be a list",
+                    error="dataset_row['input'] must be a list",
                 )
 
             # Make the API request
             response = requests.post(
                 self.url, json={"agent_id": "test", "conversation": conversation}
             )
+
             response.raise_for_status()
+
             output = response.json()
 
             # Return successful result
             return TaskResult(
-                input=Input,
+                dataset_row=dataset_row,
                 output=output,
                 metadata={
                     "url": self.url,
@@ -122,25 +126,27 @@ class ExecuteAgentTask(Task):
             error_msg = f"Failed to execute agent request: {str(e)}"
             logger.error(error_msg)
             return TaskResult(
-                input=Input,
+                dataset_row=dataset_row,
                 output=None,
                 metadata={"url": self.url},
                 error=error_msg,
             )
+
         except ValueError as e:
             error_msg = f"Invalid JSON response: {str(e)}"
             logger.error(error_msg)
             return TaskResult(
-                input=Input,
+                dataset_row=dataset_row,
                 output=None,
                 metadata={"url": self.url},
                 error=error_msg,
             )
+
         except Exception as e:
             error_msg = f"Agent execution failed: {str(e)}"
             logger.error(error_msg)
             return TaskResult(
-                input=Input,
+                dataset_row=dataset_row,
                 output=None,
                 metadata={"url": self.url},
                 error=error_msg,

@@ -109,7 +109,7 @@ def test_evaluate_success(mock_openai: Mock) -> None:
 
     evaluator = SentimentClassificationAccuracyEvaluator()
     task_result = TaskResult(
-        input={"input": "This is a great product!"},
+        dataset_row={"input": "This is a great product!"},
         output="positive",
         metadata={},
     )
@@ -137,7 +137,7 @@ def test_evaluate_api_error(mock_openai: Mock) -> None:
 
     evaluator = SentimentClassificationAccuracyEvaluator()
     task_result = TaskResult(
-        input={"input": "This is a great product!"},
+        dataset_row={"input": "This is a great product!"},
         output="positive",
         metadata={},
     )
@@ -174,7 +174,7 @@ def test_callable_interface(mock_openai: Mock) -> None:
 
     # Test with TaskResult
     task_result = TaskResult(
-        input={"input": "This is great!"},
+        dataset_row={"input": "This is great!"},
         output="positive",
         metadata={},
     )

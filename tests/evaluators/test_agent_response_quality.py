@@ -111,7 +111,7 @@ def test_evaluate_success(mock_openai_client, mock_openai_response):
 
     # Create test task result
     task_result = TaskResult(
-        input={
+        dataset_row={
             "input": json.dumps(
                 [
                     "What is Python?",
@@ -156,7 +156,7 @@ def test_evaluate_missing_data(mock_openai_client):
 
     # Test missing conversation (causes JSON decode error)
     task_result = TaskResult(
-        input={},
+        dataset_row={},
         output={"response": "Test response"},
         metadata={},
     )
@@ -165,7 +165,7 @@ def test_evaluate_missing_data(mock_openai_client):
 
     # Test missing response
     task_result = TaskResult(
-        input={"input": json.dumps(["Test message"])},
+        dataset_row={"input": json.dumps(["Test message"])},
         output={},
         metadata={},
     )

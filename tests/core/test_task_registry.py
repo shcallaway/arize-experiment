@@ -14,7 +14,7 @@ class MockTask(Task):
         return "mock_task"
 
     def execute(self, Input: dict) -> TaskResult:
-        return TaskResult(input=Input, output="mock_output")
+        return TaskResult(dataset_row=Input, output="mock_output")
 
 
 def test_register_task() -> None:
@@ -30,7 +30,7 @@ def test_register_task() -> None:
             return "test_task"
 
         def execute(self, Input: dict) -> TaskResult:
-            return TaskResult(input=Input, output="test_output")
+            return TaskResult(dataset_row=Input, output="test_output")
 
     # Test direct registration
     TaskRegistry.register("mock_task", MockTask)

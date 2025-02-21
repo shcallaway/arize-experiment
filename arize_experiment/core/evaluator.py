@@ -38,7 +38,7 @@ Example:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, final
 
 from arize.experimental.datasets.experiments.types import EvaluationResult
 
@@ -82,6 +82,7 @@ class BaseEvaluator(ABC):
         """
         super().__init__()
 
+    @final
     def __str__(self) -> str:
         """Return a string representation of the evaluator.
 
@@ -90,6 +91,7 @@ class BaseEvaluator(ABC):
         """
         return self.name
 
+    @final
     def __repr__(self) -> str:
         """Return a detailed string representation of the evaluator.
 
@@ -110,11 +112,11 @@ class BaseEvaluator(ABC):
         pass
 
     @abstractmethod
-    def evaluate(self, output: TaskResult) -> EvaluationResult:
+    def evaluate(self, task_result: TaskResult) -> EvaluationResult:
         """Evaluate the given output and return a standardized result.
 
         Args:
-            output: TaskResult containing the task execution result with input,
+            task_result: TaskResult containing the task execution result with input,
                    output, metadata and any error information. Evaluators should
                    document their expected TaskResult structure in their implementation.
 
@@ -131,21 +133,31 @@ class BaseEvaluator(ABC):
         """
         pass
 
-    @abstractmethod
-    def __call__(self, output: TaskResult) -> EvaluationResult:
+    @final
+    def __call__(self, task_result: TaskResult | dict) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
 
         This allows evaluators to be used directly as functions.
+        If given a dictionary instead of a TaskResult, it will be
+        converted automatically.
 
         Args:
-            output: TaskResult containing the task execution result with input,
-                   output, metadata and any error information. Evaluators should
-                   document their expected TaskResult structure in their implementation.
+            task_result: TaskResult or dict to evaluate
 
         Returns:
             EvaluationResult: The evaluation result
 
         Raises:
             EvaluatorError: If evaluation fails
+            ValueError: If input format is invalid
         """
-        pass
+        # If task_result is a dict for some reason, convert it to a TaskResult
+        if isinstance(task_result, dict):
+            task_result = TaskResult(
+                dataset_row=task_result["dataset_row"],
+                output=task_result["output"],
+                metadata=task_result.get("metadata", {}),
+                error=task_result.get("error"),
+            )
+
+        return self.evaluate(task_result)

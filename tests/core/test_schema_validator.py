@@ -23,7 +23,7 @@ class MockTask(Task):
         return self._schema
 
     def execute(self, Input: Dict) -> TaskResult:
-        return TaskResult(input=Input, output=None)
+        return TaskResult(dataset_row=Input, output=None)
 
 
 def test_schema_validator_integration():

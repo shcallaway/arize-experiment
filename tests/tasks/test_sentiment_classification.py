@@ -196,7 +196,7 @@ def test_sentiment_classification_execute(mock_openai: Mock) -> None:
     )
 
     result = task.execute({"input": "This is a great day!"})
-    assert result.input == {"input": "This is a great day!"}
+    assert result.dataset_row == {"input": "This is a great day!"}
     assert result.output == "positive"
     assert result.error is None
     metadata = result.metadata or {}
@@ -212,7 +212,7 @@ def test_sentiment_classification_execute_with_error(mock_openai: Mock) -> None:
     task._client.chat.completions.create.side_effect = Exception("API error")
 
     result = task.execute({"input": "This is a great day!"})
-    assert result.input == {"input": "This is a great day!"}
+    assert result.dataset_row == {"input": "This is a great day!"}
     assert result.output is None
     assert "API error" in str(result.error)
     metadata = result.metadata or {}

@@ -35,4 +35,4 @@ class EchoTask(Task):
             - Optional metadata about the input type
             - No error (this task cannot fail)
         """
-        return TaskResult(input=Input, output=Input, metadata={})
+        return TaskResult(dataset_row=Input, output=Input, metadata={})

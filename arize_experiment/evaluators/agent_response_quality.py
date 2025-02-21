@@ -4,7 +4,7 @@ Evaluator for judging the quality of agent responses using OpenAI's API.
 
 import json
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from arize.experimental.datasets.experiments.types import EvaluationResult
 from openai import OpenAI
@@ -167,6 +167,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             )
 
             content = response.choices[0].message.content
+
             if content is None:
                 raise ValueError("LLM returned empty response")
 
@@ -181,7 +182,13 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
                 explanation=explanation,
             )
         except Exception as e:
-            raise ValueError(f"Agent response quality evaluation failed: {str(e)}")
+            error_msg = f"Agent response quality evaluation failed: {str(e)}"
+            logger.error(error_msg)
+            return EvaluationResult(
+                score=0.0,
+                label="error",
+                explanation=error_msg,
+            )
 
     def _format_conversation(self, conversation: List[str]) -> str:
         """Format the conversation for the LLM.
@@ -207,7 +214,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             Tuple of (conversation: List[str], response: str)
         """
         return (
-            json.loads(task_result.input.get("input", "")),
+            json.loads(task_result.dataset_row.get("input", "")),
             task_result.output.get("response", ""),
         )
 
@@ -230,22 +237,3 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             return "poor"
         else:
             return "unacceptable"
-
-    def __call__(self, task_result: Any) -> EvaluationResult:
-        """Make the evaluator callable by delegating to evaluate.
-
-        Args:
-            task_result: The task result to evaluate
-
-        Returns:
-            EvaluationResult: The evaluation result
-        """
-        if isinstance(task_result, dict):
-            task_result = TaskResult(
-                input=task_result["input"],
-                output=task_result["output"],
-                metadata=task_result.get("metadata", {}),
-                error=task_result.get("error"),
-            )
-
-        return self.evaluate(task_result)

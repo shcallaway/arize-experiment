@@ -126,6 +126,7 @@ class SentimentClassificationTask(Task):
         """
         if not model:
             raise ValueError("Model name cannot be empty")
+
         if temperature < 0 or temperature > 2:
             raise ValueError("Temperature must be between 0 and 2")
 
@@ -165,7 +166,7 @@ class SentimentClassificationTask(Task):
             description="Dataset containing text for sentiment classification",
         )
 
-    def execute(self, Input: Dict[str, Any]) -> TaskResult:
+    def execute(self, dataset_row: Dict[str, Any]) -> TaskResult:
         """Execute the sentiment classification task.
 
         This method:
@@ -176,43 +177,39 @@ class SentimentClassificationTask(Task):
         5. Returns a standardized result
 
         Args:
-            Input: Dictionary containing the text to classify under
-                  the "input" key
+            dataset_row: Dictionary containing:
+                - input: The text to classify
 
         Returns:
             TaskResult containing:
-                - input: The original input dictionary
+                - dataset_row: The original dataset row
                 - output: The sentiment classification (positive/negative/neutral)
                 - metadata: Additional information including confidence scores
                 - error: Error message if classification failed
 
         Raises:
-            TaskError: If input is invalid or classification fails
-            ValueError: If input format is incorrect
+            TaskError: Various reasons
         """
         try:
-            # Extract input from Input.
-            # This is a little confusing, but it is necessary b/c the dataset example
-            # is passed to the execute method as the "Input" param, and this param
-            # contains the entire example in dict format. Within the example dict,
-            # there is an "input" key which contains the text to classify.
-            if "input" not in Input:
+            # Validate dataset row format
+            if "input" not in dataset_row:
                 return TaskResult(
-                    input=Input,
+                    dataset_row=dataset_row,
                     output=None,
-                    error="Input must be a dictionary with 'input' key",
+                    error="dataset_row must be a dictionary with 'input' key",
                     metadata={
                         "model": self.model,
                         "temperature": self.temperature,
                     },
                 )
 
-            input = Input["input"]
-            if not isinstance(input, str):
+            text = dataset_row["input"]
+
+            if not isinstance(text, str):
                 return TaskResult(
-                    input=Input,
+                    dataset_row=dataset_row,
                     output=None,
-                    error="Input must be a string",
+                    error="dataset_row['input'] must be a string",
                     metadata={
                         "model": self.model,
                         "temperature": self.temperature,
@@ -225,19 +222,20 @@ class SentimentClassificationTask(Task):
                 temperature=self.temperature,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": input},
+                    {"role": "user", "content": text},
                 ],
             )
 
             # Parse and return result
             content = response.choices[0].message.content
+
             if content is None:
                 raise TaskError("LLM returned empty response")
 
             result = self._parse_llm_output(content)
 
             return TaskResult(
-                input=Input,
+                dataset_row=dataset_row,
                 output=result,
                 metadata={
                     "model": self.model,
@@ -246,11 +244,12 @@ class SentimentClassificationTask(Task):
             )
 
         except Exception as e:
-            logger.error(f"Sentiment classification failed: {str(e)}")
+            error_msg = f"Sentiment classification failed: {str(e)}"
+            logger.error(error_msg)
             return TaskResult(
-                input=Input,
+                dataset_row=dataset_row,
                 output=None,
-                error=f"Sentiment classification failed: {str(e)}",
+                error=error_msg,
                 metadata={
                     "model": self.model,
                     "temperature": self.temperature,

@@ -30,8 +30,13 @@ def register_all_tasks() -> None:
     import arize_experiment.tasks.sentiment_classification  # noqa
 
 
-register_all_evaluators()
-register_all_tasks()
+def register() -> None:
+    """Register all evaluators and tasks."""
+    register_all_evaluators()
+    register_all_tasks()
+
+
+register()
 
 
 @click.group()
