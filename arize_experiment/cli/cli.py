@@ -10,7 +10,8 @@ from typing import List
 import click
 from dotenv import load_dotenv
 
-from arize_experiment.cli.handler import Handler
+from arize_experiment.cli.commands.create_dataset import CreateDatasetCommand
+from arize_experiment.cli.commands.run import RunCommand
 from arize_experiment.core.errors import pretty_print_error
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task_registry import TaskRegistry
@@ -39,6 +40,30 @@ def register() -> None:
 
 
 register()
+
+
+def validate_task(ctx: click.Context, param: click.Parameter, value: str) -> str:
+    """Validate task name."""
+    if value not in TaskRegistry.list():
+        raise click.BadParameter(
+            f"Task '{value}' not found. Available tasks: "
+            f"{', '.join(TaskRegistry.list())}"
+        )
+    return value
+
+
+def validate_evaluator(
+    ctx: click.Context, param: click.Parameter, value: List[str]
+) -> List[str]:
+    """Validate evaluator names."""
+    available_evaluators = EvaluatorRegistry.list()
+    for evaluator in value:
+        if evaluator not in available_evaluators:
+            raise click.BadParameter(
+                f"Evaluator '{evaluator}' not found. Available evaluators: "
+                f"{', '.join(available_evaluators)}"
+            )
+    return value
 
 
 @click.group()
@@ -89,8 +114,7 @@ results can be viewed in the Arize web dashboard."""
     "--task",
     "-t",
     required=True,
-    # callback=validate_task,
-    type=click.Choice(TaskRegistry.list()),
+    callback=validate_task,
     help="Name of the task to use",
 )
 @click.option(
@@ -98,8 +122,7 @@ results can be viewed in the Arize web dashboard."""
     "-e",
     multiple=True,
     required=True,
-    # callback=validate_evaluator,
-    type=click.Choice(EvaluatorRegistry.list()),
+    callback=validate_evaluator,
     help="Name of an evaluator to use (can be used multiple times)",
 )
 @click.option(
@@ -127,10 +150,10 @@ def run(
         logger.info("Running experiment")
 
         # Initialize the command handler
-        handler = Handler()
+        command = RunCommand()
 
         # Run the experiment
-        handler.run(
+        command.run(
             experiment_name=name,
             dataset_name=dataset,
             task_name=task,
@@ -170,10 +193,10 @@ def create_dataset(name: str, path_to_csv: str) -> None:
         logger.info("Creating dataset")
 
         # Initialize the command handler
-        handler = Handler()
+        command = CreateDatasetCommand()
 
         # Create the dataset
-        handler.create_dataset(
+        command.create_dataset(
             dataset_name=name,
             path_to_csv=path_to_csv,
         )
