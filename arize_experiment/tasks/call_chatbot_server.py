@@ -1,4 +1,4 @@
-"""Execute an agent by calling a web server."""
+"""Call a chatbot server to process conversations."""
 
 import json
 import logging
@@ -15,22 +15,22 @@ from arize_experiment.core.task_registry import TaskRegistry
 logger = logging.getLogger(__name__)
 
 
-@TaskRegistry.register("execute_agent")
-class ExecuteAgentTask(Task):
-    """Execute an agent by calling a web server.
+@TaskRegistry.register("call_chatbot_server")
+class CallChatbotServerTask(Task):
+    """Call a chatbot server to process conversations.
 
-    This task makes HTTP requests to a specified endpoint to execute an agent
-    and process its response. The agent is expected to be running at the
+    This task makes HTTP requests to a specified endpoint to process conversations
+    through a chatbot server. The server is expected to be running at the
     provided URL endpoint.
     """
 
     def __init__(
         self, *args: Any, base_url: str = "http://localhost:8080", **kwargs: Any
     ) -> None:
-        """Initialize the execute agent task.
+        """Initialize the chatbot server task.
 
         Args:
-            base_url: The base URL where the agent is running
+            base_url: The base URL where the chatbot server is running
             *args: Variable length argument list
             **kwargs: Arbitrary keyword arguments
         """
@@ -44,7 +44,7 @@ class ExecuteAgentTask(Task):
         Returns:
             str: The unique identifier for this task
         """
-        return "execute_agent"
+        return "call_chatbot_server"
 
     @property
     def required_schema(self) -> DatasetSchema:

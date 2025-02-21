@@ -1,4 +1,4 @@
-"""Tests for the execute agent task."""
+"""Tests for the chatbot server task."""
 
 import json
 from typing import Any, Dict
@@ -8,26 +8,26 @@ import pytest
 import requests
 from requests.exceptions import RequestException
 
-from arize_experiment.tasks.execute_agent import ExecuteAgentTask
+from arize_experiment.tasks.call_chatbot_server import CallChatbotServerTask
 
 
 def test_task_initialization() -> None:
     """Test that the task initializes with the correct URL."""
     base_url = "http://localhost:8000"
-    task = ExecuteAgentTask(base_url=base_url)
+    task = CallChatbotServerTask(base_url=base_url)
     assert task.url == f"{base_url}/execute"
-    assert task.name == "execute_agent"
+    assert task.name == "call_chatbot_server"
 
 
 def test_task_name() -> None:
     """Test the task name property."""
-    task = ExecuteAgentTask()
-    assert task.name == "execute_agent"
+    task = CallChatbotServerTask()
+    assert task.name == "call_chatbot_server"
 
 
 def test_default_url() -> None:
     """Test that the default URL is set correctly."""
-    task = ExecuteAgentTask()
+    task = CallChatbotServerTask()
     assert task.url == "http://localhost:8080/execute"
 
 
@@ -42,7 +42,7 @@ def test_default_url() -> None:
 )
 def test_execute_invalid_input_format(input_data: Dict[str, Any]) -> None:
     """Test task execution with invalid input formats."""
-    task = ExecuteAgentTask()
+    task = CallChatbotServerTask()
     result = task.execute(input_data)
 
     assert not result.success
@@ -61,7 +61,7 @@ def test_successful_request(mock_post: Mock) -> None:
     mock_response.headers = {"Content-Type": "application/json"}
     mock_post.return_value = mock_response
 
-    task = ExecuteAgentTask()
+    task = CallChatbotServerTask()
     conversation = [{"role": "user", "content": "What is the weather in Tokyo?"}]
     input_data = {"input": json.dumps(conversation)}
 
@@ -89,7 +89,7 @@ def test_request_error_handling(mock_post: Mock) -> None:
     # Setup mock to raise an exception
     mock_post.side_effect = RequestException("Connection error")
 
-    task = ExecuteAgentTask()
+    task = CallChatbotServerTask()
     conversation = [{"role": "user", "content": "Hello"}]
     input_data = {"input": json.dumps(conversation)}
 
@@ -110,7 +110,7 @@ def test_http_error_handling(mock_post: Mock) -> None:
     mock_response.raise_for_status.side_effect = requests.HTTPError("404 Client Error")
     mock_post.return_value = mock_response
 
-    task = ExecuteAgentTask()
+    task = CallChatbotServerTask()
     conversation = [{"role": "user", "content": "Hello"}]
     input_data = {"input": json.dumps(conversation)}
 
@@ -131,7 +131,7 @@ def test_json_decode_error(mock_post: Mock) -> None:
     mock_response.json.side_effect = ValueError("Invalid JSON")
     mock_post.return_value = mock_response
 
-    task = ExecuteAgentTask()
+    task = CallChatbotServerTask()
     conversation = [{"role": "user", "content": "Hello"}]
     input_data = {"input": json.dumps(conversation)}
 

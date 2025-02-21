@@ -26,9 +26,9 @@ def register_all_evaluators() -> None:
 
 def register_all_tasks() -> None:
     """Register all tasks."""
+    import arize_experiment.tasks.call_chatbot_server  # noqa
     import arize_experiment.tasks.delegate  # noqa
     import arize_experiment.tasks.echo  # noqa
-    import arize_experiment.tasks.execute_agent  # noqa
     import arize_experiment.tasks.sentiment_classification  # noqa
 
 

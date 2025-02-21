@@ -94,7 +94,7 @@ ARIZE_SPACE_KEY=your_arize_space_key
 
 # Set optional variables in your .env:
 OPENAI_API_KEY=your_openai_api_key  # Required for some tasks/evaluators
-AGENT_SERVER_URL=http://localhost:8080  # Required for execute_agent task
+AGENT_SERVER_URL=http://localhost:8080  # Required for call_chatbot_server task
 ```
 
 ## Usage Guide
@@ -124,9 +124,9 @@ arize-experiment run \
   --evaluator sentiment_classification_accuracy
 ```
 
-#### 2. Execute Agent
+#### 2. Call Chatbot Server
 
-Executes an agent by making HTTP requests to a specified endpoint. The agent is expected to be running at the provided URL endpoint (defaults to http://localhost:8080).
+Calls a chatbot server by making HTTP requests to a specified endpoint. The server is expected to be running at the provided URL endpoint (defaults to http://localhost:8080).
 
 Required input format:
 
@@ -143,15 +143,15 @@ Required input format:
 
 Configuration:
 
-- Set `AGENT_SERVER_URL` in your .env file or environment to specify the agent endpoint
+- Set `AGENT_SERVER_URL` in your .env file or environment to specify the server endpoint
 - Default URL is http://localhost:8080 if not specified
 
 ```bash
-# Example: Evaluate a task that executes a chatbot
+# Example: Evaluate a task that calls a chatbot server
 arize-experiment run \
   --name <your-experiment-name> \
   --dataset <your-dataset-name> \
-  --task execute_agent \
+  --task call_chatbot_server \
   --evaluator sentiment_classification_accuracy
 ```
 
