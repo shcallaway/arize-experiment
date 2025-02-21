@@ -72,7 +72,7 @@ def test_run_command_minimal(cli_runner, mock_handler):
             "--dataset",
             "test-dataset",
             "--task",
-            "sentiment_classification",
+            "classify_sentiment",
             "--evaluator",
             "sentiment_classification_accuracy",
         ],
@@ -83,7 +83,7 @@ def test_run_command_minimal(cli_runner, mock_handler):
     mock_handler.run.assert_called_once_with(
         experiment_name="test-experiment",
         dataset_name="test-dataset",
-        task_name="sentiment_classification",
+        task_name="classify_sentiment",
         raw_tags=None,
         evaluator_names=["sentiment_classification_accuracy"],
     )
@@ -100,7 +100,7 @@ def test_run_command_with_tags(cli_runner, mock_handler):
             "--dataset",
             "test-dataset",
             "--task",
-            "sentiment_classification",
+            "classify_sentiment",
             "--evaluator",
             "sentiment_classification_accuracy",
             "--tag",
@@ -113,7 +113,7 @@ def test_run_command_with_tags(cli_runner, mock_handler):
     mock_handler.run.assert_called_once_with(
         experiment_name="test-experiment",
         dataset_name="test-dataset",
-        task_name="sentiment_classification",
+        task_name="classify_sentiment",
         raw_tags=["env=test", "version=1.0"],
         evaluator_names=["sentiment_classification_accuracy"],
     )
@@ -130,7 +130,7 @@ def test_run_command_with_multiple_evaluators(cli_runner, mock_handler):
             "--dataset",
             "test-dataset",
             "--task",
-            "sentiment_classification",
+            "classify_sentiment",
             "--evaluator",
             "sentiment_classification_accuracy",
             "--evaluator",
@@ -141,7 +141,7 @@ def test_run_command_with_multiple_evaluators(cli_runner, mock_handler):
     mock_handler.run.assert_called_once_with(
         experiment_name="test-experiment",
         dataset_name="test-dataset",
-        task_name="sentiment_classification",
+        task_name="classify_sentiment",
         raw_tags=None,
         evaluator_names=[
             "sentiment_classification_accuracy",
@@ -188,7 +188,7 @@ def test_run_command_invalid_evaluator(cli_runner):
             "--dataset",
             "test-dataset",
             "--task",
-            "sentiment_classification",
+            "classify_sentiment",
             "--evaluator",
             "invalid_evaluator",
         ],

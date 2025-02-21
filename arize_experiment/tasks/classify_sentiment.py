@@ -36,7 +36,8 @@ Example:
 """
 
 import logging
-from typing import Any, Dict, Optional
+import os
+from typing import Any, Dict
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
@@ -54,86 +55,38 @@ You are a sentiment analyzer. Classify the following text as either 'positive',
 """
 
 
-@TaskRegistry.register("sentiment_classification")
-class SentimentClassificationTask(Task):
-    """Task for classifying text sentiment using OpenAI's API.
+@TaskRegistry.register("classify_sentiment")
+class ClassifySentimentTask(Task):
+    """Classify sentiment in text using OpenAI models.
 
-    This task uses OpenAI's language models to analyze text and classify
-    its sentiment as either positive, negative, or neutral. The task uses
-    a simple prompt-based approach, instructing the model to respond with
-    a single word classification.
-
-    Features:
-    1. Simple API integration
-    2. Consistent results
-    3. Configurable model parameters
-    4. Comprehensive error handling
-    5. Clear output format
-
-    Implementation Details:
-    - Uses a zero-shot classification approach
-    - Returns standardized sentiment labels
-    - Handles various text inputs gracefully
-    - Provides detailed error information
-    - Supports custom model configuration
-
-    Attributes:
-        model (str): The OpenAI model to use for classification
-        temperature (float): The sampling temperature for generation
-        api_key (Optional[str]): OpenAI API key if not set in environment
-        _client (OpenAI): OpenAI client instance
-
-    Example:
-        ```python
-        task = SentimentClassificationTask(
-            model="gpt-4",
-            temperature=0,
-            api_key="your-api-key"  # Optional
-        )
-
-        result = task.execute({
-            "input": "The service was excellent!"
-        })
-
-        if result.success:
-            print(f"Sentiment: {result.output}")
-            print(f"Confidence: {result.metadata['confidence']}")
-        else:
-            print(f"Error: {result.error}")
-        ```
+    This task uses OpenAI's language models to analyze the sentiment of text,
+    classifying it as positive, negative, or neutral.
     """
 
     def __init__(
         self,
         *args: Any,
-        model: str = "gpt-4o-mini",
+        model: str = "gpt-3.5-turbo",
         temperature: float = 0,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the sentiment classification task.
 
         Args:
-            model: The OpenAI model to use (default: gpt-4o-mini)
+            model: The OpenAI model to use for classification
             temperature: The sampling temperature (default: 0)
-            api_key: Optional OpenAI API key
-            *args: Additional positional arguments
-            **kwargs: Additional keyword arguments
-
-        Raises:
-            ValueError: If model or temperature are invalid
-            ConfigurationError: If API key is invalid
+            api_key: Optional OpenAI API key (defaults to env var)
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments
         """
-        if not model:
-            raise ValueError("Model name cannot be empty")
+        api_key = api_key or os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OpenAI API key not provided")
 
-        if temperature < 0 or temperature > 2:
-            raise ValueError("Temperature must be between 0 and 2")
-
+        self._client = OpenAI(api_key=api_key)
         self.model = model
         self.temperature = temperature
-        self.api_key = api_key
-        self._client = OpenAI(api_key=api_key) if api_key else OpenAI()
 
     @property
     def name(self) -> str:
@@ -142,7 +95,7 @@ class SentimentClassificationTask(Task):
         Returns:
             str: The unique identifier for this task
         """
-        return "sentiment_classification"
+        return "classify_sentiment"
 
     @property
     def required_schema(self) -> DatasetSchema:
@@ -196,11 +149,11 @@ class SentimentClassificationTask(Task):
                 return TaskResult(
                     dataset_row=dataset_row,
                     output=None,
-                    error="dataset_row must be a dictionary with 'input' key",
                     metadata={
                         "model": self.model,
                         "temperature": self.temperature,
                     },
+                    error="dataset_row must be a dictionary with 'input' key",
                 )
 
             text = dataset_row["input"]
@@ -209,21 +162,21 @@ class SentimentClassificationTask(Task):
                 return TaskResult(
                     dataset_row=dataset_row,
                     output=None,
-                    error="dataset_row['input'] must be a string",
                     metadata={
                         "model": self.model,
                         "temperature": self.temperature,
                     },
+                    error="dataset_row['input'] must be a string",
                 )
 
             # Call OpenAI API
             response: ChatCompletion = self._client.chat.completions.create(
                 model=self.model,
-                temperature=self.temperature,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": text},
                 ],
+                temperature=self.temperature,
             )
 
             # Parse and return result
@@ -249,11 +202,11 @@ class SentimentClassificationTask(Task):
             return TaskResult(
                 dataset_row=dataset_row,
                 output=None,
-                error=error_msg,
                 metadata={
                     "model": self.model,
                     "temperature": self.temperature,
                 },
+                error=error_msg,
             )
 
     def _parse_llm_output(

@@ -120,7 +120,7 @@ Analyzes text sentiment using OpenAI models. Classifies text as positive, negati
 arize-experiment run \
   --name <your-experiment-name> \
   --dataset <your-dataset-name> \
-  --task sentiment_classification \
+  --task classify_sentiment \
   --evaluator sentiment_classification_accuracy
 ```
 
