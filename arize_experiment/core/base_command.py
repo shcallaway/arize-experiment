@@ -13,7 +13,6 @@ from typing import Any, final
 
 from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
 from arize_experiment.core.errors import ConfigurationError, HandlerError
-from arize_experiment.core.schema_validator import SchemaValidator
 
 logger = logging.getLogger(__name__)
 
@@ -30,14 +29,13 @@ class BaseCommand(ABC):
     def __init__(self) -> None:
         """Initialize the command.
 
-        This sets up the schema validator and Arize client needed for
-        command execution. Raises appropriate errors if initialization fails.
+        This sets up the Arize client needed for command execution.
+        Raises appropriate errors if initialization fails.
 
         Raises:
             HandlerError: If handler initialization fails
             ConfigurationError: If configuration is invalid
         """
-        self._schema_validator = SchemaValidator()
         self._arize_client = self._initialize_arize_client()
 
     @abstractmethod

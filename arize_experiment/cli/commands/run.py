@@ -15,6 +15,7 @@ from arize_experiment.core.base_command import BaseCommand
 from arize_experiment.core.errors import ConfigurationError, HandlerError
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
+from arize_experiment.core.schema_validator import SchemaValidator
 from arize_experiment.core.task import Task
 from arize_experiment.core.task_registry import TaskRegistry
 
@@ -23,6 +24,19 @@ logger = logging.getLogger(__name__)
 
 class RunCommand(BaseCommand):
     """Handles experiment run command execution."""
+
+    def __init__(self) -> None:
+        """Initialize the command.
+
+        This sets up the Arize client and schema validator needed for
+        command execution. Raises appropriate errors if initialization fails.
+
+        Raises:
+            HandlerError: If handler initialization fails
+            ConfigurationError: If configuration is invalid
+        """
+        super().__init__()
+        self._schema_validator = SchemaValidator()
 
     def execute(  # noqa: C901
         self,
