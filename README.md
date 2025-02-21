@@ -26,7 +26,7 @@ arize-experiment run \
   --name <your-experiment-name> \
   --dataset <your-dataset-name> \
   --task <your-task-name> \
-  --evaluator <your-evaluator-name>
+  --evaluator sentiment_classification_is_accurate
 ```
 
 ## Features
@@ -121,7 +121,7 @@ arize-experiment run \
   --name <your-experiment-name> \
   --dataset <your-dataset-name> \
   --task classify_sentiment \
-  --evaluator sentiment_classification_accuracy
+  --evaluator sentiment_classification_is_accurate
 ```
 
 #### 2. Call Chatbot Server
@@ -152,7 +152,7 @@ arize-experiment run \
   --name <your-experiment-name> \
   --dataset <your-dataset-name> \
   --task call_chatbot_server \
-  --evaluator sentiment_classification_accuracy
+  --evaluator sentiment_classification_is_accurate
 ```
 
 ### Working with Datasets

@@ -18,7 +18,7 @@ The evaluator is designed to:
 
 Example:
     ```python
-    from arize_experiment.evaluators.sentiment_classification_accuracy import (
+    from arize_experiment.evaluators.sentiment_classification_is_accurate import (
         SentimentClassificationAccuracyEvaluator
     )
 
@@ -68,7 +68,7 @@ SYSTEM_PROMPT = (
 )
 
 
-@EvaluatorRegistry.register("sentiment_classification_accuracy")
+@EvaluatorRegistry.register("sentiment_classification_is_accurate")
 class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
     """Evaluates the accuracy of sentiment classifications.
 
@@ -164,7 +164,7 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         Returns:
             str: The unique identifier for this evaluator
         """
-        return "sentiment_classification_accuracy"
+        return "sentiment_classification_is_accurate"
 
     def _parse_llm_output(self, text: str) -> Tuple[bool, str]:
         """Parse the LLM output to extract the decision and explanation.

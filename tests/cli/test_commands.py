@@ -74,7 +74,7 @@ def test_run_command_minimal(cli_runner, mock_handler):
             "--task",
             "classify_sentiment",
             "--evaluator",
-            "sentiment_classification_accuracy",
+            "sentiment_classification_is_accurate",
         ],
     )
     if result.exit_code != 0:
@@ -85,7 +85,7 @@ def test_run_command_minimal(cli_runner, mock_handler):
         dataset_name="test-dataset",
         task_name="classify_sentiment",
         raw_tags=None,
-        evaluator_names=["sentiment_classification_accuracy"],
+        evaluator_names=["sentiment_classification_is_accurate"],
     )
 
 
@@ -102,7 +102,7 @@ def test_run_command_with_tags(cli_runner, mock_handler):
             "--task",
             "classify_sentiment",
             "--evaluator",
-            "sentiment_classification_accuracy",
+            "sentiment_classification_is_accurate",
             "--tag",
             "env=test",
             "--tag",
@@ -115,7 +115,7 @@ def test_run_command_with_tags(cli_runner, mock_handler):
         dataset_name="test-dataset",
         task_name="classify_sentiment",
         raw_tags=["env=test", "version=1.0"],
-        evaluator_names=["sentiment_classification_accuracy"],
+        evaluator_names=["sentiment_classification_is_accurate"],
     )
 
 
@@ -132,9 +132,9 @@ def test_run_command_with_multiple_evaluators(cli_runner, mock_handler):
             "--task",
             "classify_sentiment",
             "--evaluator",
-            "sentiment_classification_accuracy",
+            "sentiment_classification_is_accurate",
             "--evaluator",
-            "sentiment_classification_accuracy",
+            "agent_response_quality",
         ],
     )
     assert result.exit_code == 0
@@ -144,8 +144,8 @@ def test_run_command_with_multiple_evaluators(cli_runner, mock_handler):
         task_name="classify_sentiment",
         raw_tags=None,
         evaluator_names=[
-            "sentiment_classification_accuracy",
-            "sentiment_classification_accuracy",
+            "sentiment_classification_is_accurate",
+            "agent_response_quality",
         ],
     )
 
@@ -170,7 +170,7 @@ def test_run_command_invalid_task(cli_runner):
             "--task",
             "invalid_task",
             "--evaluator",
-            "sentiment_classification_accuracy",
+            "sentiment_classification_is_accurate",
         ],
     )
     assert result.exit_code != 0
