@@ -1,5 +1,5 @@
 """
-Tests for the agent response quality evaluator.
+Tests for the chatbot response acceptability evaluator.
 """
 
 import json
@@ -11,8 +11,8 @@ from arize.experimental.datasets.experiments.types import EvaluationResult
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 from arize_experiment.core.task import TaskResult
-from arize_experiment.evaluators.agent_response_quality import (
-    AgentResponseQualityEvaluator,
+from arize_experiment.evaluators.chatbot_response_is_acceptable import (
+    ChatbotResponseIsAcceptableEvaluator,
 )
 
 
@@ -44,15 +44,15 @@ def mock_openai_client():
 
 def test_evaluator_initialization(mock_openai_client):
     """Test evaluator initialization with default parameters."""
-    evaluator = AgentResponseQualityEvaluator()
-    assert evaluator.name == "agent_response_quality"
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
+    assert evaluator.name == "chatbot_response_is_acceptable"
     assert evaluator._model == "gpt-4o-mini"
     assert evaluator._temperature == 0
 
 
 def test_evaluator_initialization_with_params(mock_openai_client):
     """Test evaluator initialization with custom parameters."""
-    evaluator = AgentResponseQualityEvaluator(
+    evaluator = ChatbotResponseIsAcceptableEvaluator(
         model="gpt-3.5-turbo", temperature=0.5, api_key="test-key"
     )
     assert evaluator._model == "gpt-3.5-turbo"
@@ -61,7 +61,7 @@ def test_evaluator_initialization_with_params(mock_openai_client):
 
 def test_parse_llm_output_valid(mock_openai_client):
     """Test parsing valid LLM output."""
-    evaluator = AgentResponseQualityEvaluator()
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
     output = "Score: 0.85\nExplanation: The response is clear and relevant."
     score, explanation = evaluator._parse_llm_output(output)
     assert score == 0.85
@@ -70,7 +70,7 @@ def test_parse_llm_output_valid(mock_openai_client):
 
 def test_parse_llm_output_invalid(mock_openai_client):
     """Test parsing invalid LLM output."""
-    evaluator = AgentResponseQualityEvaluator()
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
     invalid_outputs = [
         "Invalid format",
         "Score: invalid\nExplanation: test",
@@ -85,7 +85,7 @@ def test_parse_llm_output_invalid(mock_openai_client):
 
 @patch("openai.OpenAI")
 def test_evaluate_success(mock_openai_client, mock_openai_response):
-    """Test successful evaluation of agent response."""
+    """Test successful evaluation of chatbot response."""
     # Create a mock response with the expected content
     mock_response = MagicMock()
     mock_response.choices = [
@@ -106,7 +106,7 @@ def test_evaluate_success(mock_openai_client, mock_openai_response):
     mock_openai_client.return_value = mock_client
 
     # Create evaluator with mocked client
-    evaluator = AgentResponseQualityEvaluator()
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
     evaluator._client = mock_client  # Directly inject the mock client
 
     # Create test task result
@@ -152,7 +152,7 @@ def test_evaluate_success(mock_openai_client, mock_openai_response):
 
 def test_evaluate_missing_data(mock_openai_client):
     """Test evaluation with missing conversation or response."""
-    evaluator = AgentResponseQualityEvaluator()
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
 
     # Test missing conversation (causes JSON decode error)
     task_result = TaskResult(
@@ -169,13 +169,13 @@ def test_evaluate_missing_data(mock_openai_client):
         output={},
         metadata={},
     )
-    with pytest.raises(ValueError, match="Missing agent response"):
+    with pytest.raises(ValueError, match="Missing chatbot response"):
         evaluator.evaluate(task_result)
 
 
 def test_call_with_dict(mock_openai_client):
     """Test calling evaluator with dictionary input."""
-    evaluator = AgentResponseQualityEvaluator()
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
 
     with patch.object(evaluator, "evaluate") as mock_evaluate:
         mock_evaluate.return_value = EvaluationResult(

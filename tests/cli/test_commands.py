@@ -134,7 +134,7 @@ def test_run_command_with_multiple_evaluators(cli_runner, mock_handler):
             "--evaluator",
             "sentiment_classification_is_accurate",
             "--evaluator",
-            "agent_response_quality",
+            "chatbot_response_is_acceptable",
         ],
     )
     assert result.exit_code == 0
@@ -145,7 +145,7 @@ def test_run_command_with_multiple_evaluators(cli_runner, mock_handler):
         raw_tags=None,
         evaluator_names=[
             "sentiment_classification_is_accurate",
-            "agent_response_quality",
+            "chatbot_response_is_acceptable",
         ],
     )
 

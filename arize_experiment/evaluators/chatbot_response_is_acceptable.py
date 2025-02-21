@@ -39,16 +39,16 @@ SYSTEM_PROMPT = (
 )
 
 
-@EvaluatorRegistry.register("agent_response_quality")
-class AgentResponseQualityEvaluator(BaseEvaluator):
-    """Evaluates the quality of agent responses using OpenAI's API.
+@EvaluatorRegistry.register("chatbot_response_is_acceptable")
+class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
+    """Evaluates the quality of chatbot responses using OpenAI's API.
 
-    This evaluator uses GPT models to analyze whether a given agent response
+    This evaluator uses GPT models to analyze whether a given chatbot response
     is appropriate, relevant, and high-quality in the context of the conversation.
 
     Configuration:
         {
-            "type": "agent_response_quality",
+            "type": "chatbot_response_is_acceptable",
             "model": "gpt-4",  # optional
             "temperature": 0.0,  # optional
             "api_key": "sk-..."  # optional
@@ -76,7 +76,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
     @property
     def name(self) -> str:
         """Get the evaluator name."""
-        return "agent_response_quality"
+        return "chatbot_response_is_acceptable"
 
     def _parse_llm_output(self, text: str) -> Tuple[float, str]:
         """Parse the LLM output to extract the score and explanation.
@@ -140,7 +140,7 @@ class AgentResponseQualityEvaluator(BaseEvaluator):
             raise ValueError("Missing conversation")
 
         if not agent_response:
-            raise ValueError("Missing agent response")
+            raise ValueError("Missing chatbot response")
 
         try:
             # Format conversation context
