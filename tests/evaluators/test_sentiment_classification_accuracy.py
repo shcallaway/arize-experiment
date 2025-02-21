@@ -182,14 +182,3 @@ def test_callable_interface(mock_openai: Mock) -> None:
     assert isinstance(result, EvaluationResult)
     assert result.score == 1.0
     assert result.label == "correct"
-
-    # Test with dictionary
-    dict_result = {
-        "dataset_row": {"input": "This is great!"},
-        "output": "positive",
-        "metadata": {},
-    }
-    result = evaluator(dict_result)
-    assert isinstance(result, EvaluationResult)
-    assert result.score == 1.0
-    assert result.label == "correct"

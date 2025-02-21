@@ -48,30 +48,6 @@ exclude = [
     "^example-plugin/"
 ]
 
-[tool.pyright]
-pythonVersion = "3.10"
-typeCheckingMode = "basic"
-reportUnknownReturnType = true
-reportInvalidTypeVarUse = true
-reportMissingParameterType = true
-reportUntypedFunctionDecorator = true
-strictParameterNoneValue = true
-reportUnnecessaryCast = true
-reportUnusedTypeIgnore = true
-reportNoReturn = true
-reportUnreachableCode = true
-reportMissingTypeStubs = false
-reportUnknownMemberType = false
-reportUnknownVariableType = false
-reportUnknownArgumentType = false
-useLibraryCodeForTypes = true
-exclude = [
-    "**/build",
-    "**/dist",
-    "**/docs",
-    "**/example-plugin"
-]
-
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"

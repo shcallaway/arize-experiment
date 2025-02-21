@@ -299,13 +299,21 @@ class SentimentClassificationAccuracyEvaluator(BaseEvaluator):
         """
         return "correct" if correct else "incorrect"
 
-    def _parse_task_result(self, task_result: TaskResult) -> Tuple[str, str]:
+    def _parse_task_result(self, task_result: TaskResult | dict) -> Tuple[str, str]:
         """Parse the task result to extract the input text and classification.
 
         Args:
-            task_result: TaskResult containing:
+            task_result: TaskResult or dict containing:
                 - dataset_row: Dict with text and expected sentiment
+                - output: Predicted sentiment label
+
+        Returns:
+            Tuple of (text: str, classification: str)
         """
-        text = task_result.dataset_row["input"]
-        classification = task_result.output
+        if isinstance(task_result, dict):
+            text = task_result["dataset_row"]["input"]
+            classification = task_result["output"]
+        else:
+            text = task_result.dataset_row["input"]
+            classification = task_result.output
         return text, classification

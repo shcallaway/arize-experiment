@@ -2,11 +2,13 @@
 Example task implementation using the Task base class.
 """
 
-from typing import Any
+from typing import Any, Dict
 
 from arize_experiment.core.task import Task, TaskResult
+from arize_experiment.core.task_registry import TaskRegistry
 
 
+@TaskRegistry.register("echo")
 class EchoTask(Task):
     """Simple echo task that returns its input.
 
@@ -23,11 +25,12 @@ class EchoTask(Task):
         """Get the task name."""
         return "echo"
 
-    def execute(self, Input: Any) -> TaskResult:
+    def execute(self, dataset_row: Dict[str, Any]) -> TaskResult:
         """Execute the echo task.
 
         Args:
-            Input: Any input data
+            dataset_row: Dictionary containing:
+                - input: The input data to echo
 
         Returns:
             TaskResult containing:
@@ -35,4 +38,8 @@ class EchoTask(Task):
             - Optional metadata about the input type
             - No error (this task cannot fail)
         """
-        return TaskResult(dataset_row=Input, output=Input, metadata={})
+        return TaskResult(
+            dataset_row=dataset_row,
+            output=dataset_row["input"],
+            metadata={},
+        )

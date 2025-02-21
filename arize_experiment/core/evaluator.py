@@ -134,15 +134,13 @@ class BaseEvaluator(ABC):
         pass
 
     @final
-    def __call__(self, task_result: TaskResult | dict[str, Any]) -> EvaluationResult:
+    def __call__(self, task_result: TaskResult) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
 
         This allows evaluators to be used directly as functions.
-        If given a dictionary instead of a TaskResult, it will be
-        converted automatically.
 
         Args:
-            task_result: TaskResult or dict to evaluate
+            task_result: TaskResult to evaluate
 
         Returns:
             EvaluationResult: The evaluation result
@@ -151,13 +149,4 @@ class BaseEvaluator(ABC):
             EvaluatorError: If evaluation fails
             ValueError: If input format is invalid
         """
-        # If task_result is a dict for some reason, convert it to a TaskResult
-        if isinstance(task_result, dict):
-            task_result = TaskResult(
-                dataset_row=task_result["dataset_row"],
-                output=task_result["output"],
-                metadata=task_result.get("metadata", {}),
-                error=task_result.get("error"),
-            )
-
         return self.evaluate(task_result)

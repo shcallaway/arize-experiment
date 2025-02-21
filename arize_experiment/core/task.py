@@ -156,7 +156,7 @@ class Task(ABC):
         return f"{self.__class__.__name__}(name={self.name})"
 
     @final
-    def __call__(self, Input: Dict[str, Any]) -> Any:
+    def __call__(self, dataset_row: Dict[str, Any]) -> Any:
         """Make the task callable by delegating to execute.
 
         This allows tasks to be used directly as functions. It unwraps
@@ -164,7 +164,7 @@ class Task(ABC):
         if execution failed.
 
         Args:
-            Input: The input data for the task
+            dataset_row: A single row from the dataset to execute the task on
 
         Returns:
             The TaskResult object returned by the task's execute method
@@ -172,7 +172,7 @@ class Task(ABC):
         Raises:
             TaskError: If the task fails to execute
         """
-        result = self.execute(Input)
+        result = self.execute(dataset_row)
         if result.error:
             raise TaskError(result.error)
         return result
