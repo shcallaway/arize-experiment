@@ -144,7 +144,7 @@ def test_run_command_minimal(cli_runner, mock_run_command):
     if result.exit_code != 0:
         print(f"\nCommand output:\n{result.output}")
     assert result.exit_code == 0
-    mock_run_command.run.assert_called_once_with(
+    mock_run_command.execute.assert_called_once_with(
         experiment_name="test-experiment",
         dataset_name="test-dataset",
         task_name="mock_task",
@@ -174,7 +174,7 @@ def test_run_command_with_tags(cli_runner, mock_run_command):
         ],
     )
     assert result.exit_code == 0
-    mock_run_command.run.assert_called_once_with(
+    mock_run_command.execute.assert_called_once_with(
         experiment_name="test-experiment",
         dataset_name="test-dataset",
         task_name="mock_task",
@@ -202,7 +202,7 @@ def test_run_command_with_multiple_evaluators(cli_runner, mock_run_command):
         ],
     )
     assert result.exit_code == 0
-    mock_run_command.run.assert_called_once_with(
+    mock_run_command.execute.assert_called_once_with(
         experiment_name="test-experiment",
         dataset_name="test-dataset",
         task_name="mock_task",
@@ -290,7 +290,7 @@ def test_create_dataset_command_success(cli_runner, mock_create_dataset_command)
         ],
     )
     assert result.exit_code == 0
-    mock_create_dataset_command.create_dataset.assert_called_once_with(
+    mock_create_dataset_command.execute.assert_called_once_with(
         dataset_name="test-dataset",
         path_to_csv="test.csv",
     )
@@ -305,7 +305,7 @@ def test_create_dataset_command_missing_required_args(cli_runner):
 
 def test_create_dataset_command_file_not_found(cli_runner, mock_create_dataset_command):
     """Test that create_dataset command fails when CSV file is not found."""
-    mock_create_dataset_command.create_dataset.side_effect = FileNotFoundError(
+    mock_create_dataset_command.execute.side_effect = FileNotFoundError(
         "test.csv not found"
     )
     result = cli_runner.invoke(

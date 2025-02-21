@@ -8,6 +8,8 @@ validation methods.
 
 import logging
 import os
+from abc import ABC, abstractmethod
+from typing import Any, final
 
 from arize_experiment.core.arize import ArizeClient, ArizeClientConfiguration
 from arize_experiment.core.errors import ConfigurationError, HandlerError
@@ -16,7 +18,7 @@ from arize_experiment.core.schema_validator import SchemaValidator
 logger = logging.getLogger(__name__)
 
 
-class BaseCommand:
+class BaseCommand(ABC):
     """Base class for CLI commands.
 
     This class provides shared functionality for all CLI commands including:
@@ -38,6 +40,23 @@ class BaseCommand:
         self._schema_validator = SchemaValidator()
         self._arize_client = self._initialize_arize_client()
 
+    @abstractmethod
+    def execute(self, *args: Any, **kwargs: Any) -> None:
+        """Execute the command.
+
+        This abstract method must be implemented by all command classes.
+        It defines the main execution logic for the command.
+
+        Args:
+            *args: Positional arguments for the command
+            **kwargs: Keyword arguments for the command
+
+        Raises:
+            NotImplementedError: If the child class does not implement this method
+        """
+        pass
+
+    @final
     def _initialize_arize_client(self) -> ArizeClient:
         """Initialize the Arize client.
 
@@ -70,6 +89,7 @@ class BaseCommand:
 
         return arize_client
 
+    @final
     def _get_arize_api_key(self) -> str:
         """Get the Arize API key.
 
@@ -78,6 +98,7 @@ class BaseCommand:
         """
         return self._get_required_env("ARIZE_API_KEY")
 
+    @final
     def _get_arize_space_id(self) -> str:
         """Get the Arize space ID.
 
@@ -86,6 +107,7 @@ class BaseCommand:
         """
         return self._get_required_env("ARIZE_SPACE_ID")
 
+    @final
     def _get_arize_developer_key(self) -> str:
         """Get the Arize developer key.
 
@@ -94,6 +116,7 @@ class BaseCommand:
         """
         return self._get_required_env("ARIZE_DEVELOPER_KEY")
 
+    @final
     def _get_required_env(self, name: str) -> str:
         """Get a required environment variable.
 
@@ -119,6 +142,7 @@ class BaseCommand:
 
         return value
 
+    @final
     def _verify_dataset_exists(self, dataset_name: str) -> None:
         """Verify that a dataset exists.
 
@@ -131,6 +155,7 @@ class BaseCommand:
                 details={"dataset": dataset_name},
             )
 
+    @final
     def _verify_dataset_does_not_exist(self, dataset_name: str) -> None:
         """Verify that a dataset does not exist.
 
@@ -143,6 +168,7 @@ class BaseCommand:
                 details={"dataset": dataset_name},
             )
 
+    @final
     def _verify_experiment_does_not_exist(
         self, experiment_name: str, dataset_name: str
     ) -> None:
@@ -161,6 +187,7 @@ class BaseCommand:
                 },
             )
 
+    @final
     def _dataset_exists(self, dataset_name: str) -> bool:
         """Check if a dataset exists.
 
@@ -180,6 +207,7 @@ class BaseCommand:
 
         return dataset_exists is not None
 
+    @final
     def _experiment_exists(self, experiment_name: str, dataset_name: str) -> bool:
         """Check if an experiment exists.
 

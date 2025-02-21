@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class CreateDatasetCommand(BaseCommand):
     """Handles dataset creation command execution."""
 
-    def create_dataset(
+    def execute(
         self,
         dataset_name: str,
         path_to_csv: str,

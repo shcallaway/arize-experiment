@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class RunCommand(BaseCommand):
     """Handles experiment run command execution."""
 
-    def run(  # noqa: C901
+    def execute(  # noqa: C901
         self,
         experiment_name: str,
         dataset_name: str,

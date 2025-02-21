@@ -45,8 +45,8 @@ def test_create_dataset_success(command, tmp_path):
     )
     df.to_csv(csv_path, index=False, quoting=1, escapechar="\\")
 
-    # Call create_dataset
-    command.create_dataset("test_dataset", str(csv_path))
+    # Call execute
+    command.execute("test_dataset", str(csv_path))
 
     # Verify the Arize client was called correctly
     command._arize_client.create_dataset.assert_called_once()
@@ -68,7 +68,7 @@ def test_create_dataset_already_exists(command, tmp_path):
 
     # Verify that attempting to create raises an error
     with pytest.raises(ConfigurationError) as exc_info:
-        command.create_dataset("test_dataset", str(csv_path))
+        command.execute("test_dataset", str(csv_path))
     assert "already exists" in str(exc_info.value)
 
 
@@ -81,7 +81,7 @@ def test_create_dataset_empty_csv(command, tmp_path):
 
     # Verify that attempting to create raises an error
     with pytest.raises(HandlerError) as exc_info:
-        command.create_dataset("test_dataset", str(csv_path))
+        command.execute("test_dataset", str(csv_path))
     assert "CSV file is empty" in str(exc_info.value)
 
 
@@ -94,7 +94,7 @@ def test_create_dataset_invalid_csv(command, tmp_path):
 
     # Verify that attempting to create raises an error
     with pytest.raises(HandlerError) as exc_info:
-        command.create_dataset("test_dataset", str(csv_path))
+        command.execute("test_dataset", str(csv_path))
     assert "Failed to parse CSV file" in str(exc_info.value)
 
 
@@ -110,7 +110,7 @@ def test_create_dataset_arize_error(command, tmp_path):
 
     # Verify that attempting to create raises an error
     with pytest.raises(HandlerError) as exc_info:
-        command.create_dataset("test_dataset", str(csv_path))
+        command.execute("test_dataset", str(csv_path))
     assert "Arize API error" in str(exc_info.value)
 
 
@@ -126,5 +126,5 @@ def test_create_dataset_no_dataset_id(command, tmp_path):
 
     # Verify that attempting to create raises an error
     with pytest.raises(HandlerError) as exc_info:
-        command.create_dataset("test_dataset", str(csv_path))
+        command.execute("test_dataset", str(csv_path))
     assert "No dataset ID returned" in str(exc_info.value)

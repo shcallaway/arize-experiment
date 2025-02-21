@@ -118,7 +118,7 @@ def test_run_success(command):
             mock_evaluator_registry.get.return_value = MockEvaluator
 
             # Run experiment
-            command.run(
+            command.execute(
                 experiment_name="test_experiment",
                 dataset_name="test_dataset",
                 task_name="mock_task",
@@ -142,7 +142,7 @@ def test_run_dataset_not_found(command):
 
     # Verify that attempting to run raises an error
     with pytest.raises(ConfigurationError) as exc_info:
-        command.run(
+        command.execute(
             experiment_name="test_experiment",
             dataset_name="test_dataset",
             task_name="mock_task",
@@ -158,7 +158,7 @@ def test_run_experiment_exists(command):
 
     # Verify that attempting to run raises an error
     with pytest.raises(ConfigurationError) as exc_info:
-        command.run(
+        command.execute(
             experiment_name="test_experiment",
             dataset_name="test_dataset",
             task_name="mock_task",
@@ -175,7 +175,7 @@ def test_run_invalid_task(command):
 
         # Verify that attempting to run raises an error
         with pytest.raises(ConfigurationError) as exc_info:
-            command.run(
+            command.execute(
                 experiment_name="test_experiment",
                 dataset_name="test_dataset",
                 task_name="invalid_task",
@@ -188,7 +188,7 @@ def test_run_no_evaluators(command):
     """Test error when no evaluators are provided."""
     # Verify that attempting to run raises an error
     with pytest.raises(HandlerError) as exc_info:
-        command.run(
+        command.execute(
             experiment_name="test_experiment",
             dataset_name="test_dataset",
             task_name="mock_task",
@@ -210,7 +210,7 @@ def test_run_invalid_evaluator(command):
 
             # Verify that attempting to run raises an error
             with pytest.raises(HandlerError) as exc_info:
-                command.run(
+                command.execute(
                     experiment_name="test_experiment",
                     dataset_name="test_dataset",
                     task_name="mock_task",
@@ -236,7 +236,7 @@ def test_run_arize_error(command):
 
             # Verify that attempting to run raises an error
             with pytest.raises(HandlerError) as exc_info:
-                command.run(
+                command.execute(
                     experiment_name="test_experiment",
                     dataset_name="test_dataset",
                     task_name="mock_task",
@@ -256,7 +256,7 @@ def test_run_with_tags(command):
             mock_evaluator_registry.get.return_value = MockEvaluator
 
             # Run experiment with tags
-            command.run(
+            command.execute(
                 experiment_name="test_experiment",
                 dataset_name="test_dataset",
                 task_name="mock_task",
@@ -272,7 +272,7 @@ def test_run_invalid_tag_format(command):
     """Test error when tag format is invalid."""
     # Verify that attempting to run raises an error
     with pytest.raises(ConfigurationError) as exc_info:
-        command.run(
+        command.execute(
             experiment_name="test_experiment",
             dataset_name="test_dataset",
             task_name="mock_task",

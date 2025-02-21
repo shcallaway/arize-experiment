@@ -153,7 +153,7 @@ def run(
         command = RunCommand()
 
         # Run the experiment
-        command.run(
+        command.execute(
             experiment_name=name,
             dataset_name=dataset,
             task_name=task,
@@ -196,7 +196,7 @@ def create_dataset(name: str, path_to_csv: str) -> None:
         command = CreateDatasetCommand()
 
         # Create the dataset
-        command.create_dataset(
+        command.execute(
             dataset_name=name,
             path_to_csv=path_to_csv,
         )
