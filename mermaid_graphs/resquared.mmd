@@ -1,0 +1,36 @@
+flowchart TD
+    Start[Start Call] --> Intro["Introduction:<br>'Hello, am I speaking with {name}?'"]
+    
+    Intro --> Purpose["State purpose & check timing:<br>'This is Jordan from Reee squared...<br>Is this a good time?'"]
+    
+    Purpose --> |"Not good time"| Reschedule["Schedule callback"]
+    Reschedule --> End[End Call]
+    
+    Purpose --> |"Good time"| Discovery["Discovery Question #1:<br>'Do you sell to local businesses?'"]
+    
+    Discovery --> |"No"| EndPolite1["End call politely"]
+    Discovery --> |"Yes"| TimeInBiz["Discovery Question #2:<br>'How long have you been in business?'"]
+    
+    TimeInBiz --> |"Less than 2 months"| EndPolite2["End call politely"]
+    TimeInBiz --> |"2+ months"| DigDeeper["Dig Deeper:<br>'How are you currently<br>finding new customers?'"]
+    
+    DigDeeper --> |"Has systematic approach:<br>- Has sales team<br>- Runs ads<br>- Uses software"| OrderSize1["Ask about average<br>order size"]
+    DigDeeper --> |"No systematic approach:<br>- Referrals only<br>- Door to door<br>- Manual prospecting"| Willingness["Would you be willing to learn<br>about a better solution?"]
+    
+    Willingness --> |"No"| TryObjection["Try to remove objection once"]
+    Willingness --> |"Yes"| OrderSize2["Ask about average<br>order size"]
+    
+    TryObjection --> |"Successful"| OrderSize3["Ask about average<br>order size"]
+    TryObjection --> |"Unsuccessful"| EndPolite3["End call politely"]
+    
+    OrderSize1 & OrderSize2 & OrderSize3 --> |"Under $200"| EndPolite4["End call politely"]
+    OrderSize1 & OrderSize2 & OrderSize3 --> |"$200+"| DemoPitch["Offer Demo:<br>'Great, would you like to see<br>how Re-squared can help?'"]
+    
+    DemoPitch --> |"Has objection"| HandleObj["Handle objection using<br>objection handling guide"]
+    HandleObj --> |"Objection removed"| Schedule["Schedule Demo"]
+    HandleObj --> |"Objection remains"| EndPolite5["End call politely"]
+    
+    DemoPitch --> |"Accepts demo"| Schedule["Schedule Demo:<br>1. Ask timezone<br>2. Offer available slot<br>3. Confirm date/time"]
+    
+    Schedule --> Wrap["Wrap-up:<br>1. Confirm meeting details<br>2. Verify email<br>3. Positive close"]
+    Wrap --> End
