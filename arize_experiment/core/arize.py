@@ -246,7 +246,7 @@ class ArizeClient(ArizeClientProtocol):
             dataset_name: Name of the dataset to use
             task: Task function to execute
             evaluators: Optional list of evaluator functions
-
+            agent_id: Optional ID of the agent to use
         Returns:
             Experiment results
 

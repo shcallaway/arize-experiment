@@ -75,6 +75,9 @@ class ChatbotResponseIsAlignedEvaluator(BaseEvaluator):
             temperature: Model temperature (0-1)
             api_key: Optional OpenAI API key (uses env var if not provided)
         """
+        if not agent_id:
+            raise ValueError("Agent ID must be provided")
+            
         super().__init__()
         self._model = model
         self._temperature = temperature

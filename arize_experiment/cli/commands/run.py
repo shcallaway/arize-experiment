@@ -45,6 +45,7 @@ class RunCommand(BaseCommand):
         task_name: str,
         raw_tags: Optional[List[str]] = None,
         evaluator_names: Optional[List[str]] = None,
+        evaluator_params: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Handle the run experiment command.
 
@@ -62,7 +63,7 @@ class RunCommand(BaseCommand):
             task_name: Name of the task to execute
             raw_tags: Optional list of key=value tag strings
             evaluator_names: Optional list of evaluator names to use
-
+            evaluator_params: Optional dictionary of parameters to pass to the evaluator
         Raises:
             HandlerError: If command execution fails
             ConfigurationError: If command configuration is invalid
@@ -122,7 +123,7 @@ class RunCommand(BaseCommand):
             raise HandlerError("No evaluators provided")
 
         # Create evaluator callables
-        evaluators = self._create_evaluators(evaluator_names)
+        evaluators = self._create_evaluators(evaluator_names, evaluator_params)
 
         # Run experiment
         logger.info(f"Running experiment: {experiment_name}")
@@ -191,12 +192,14 @@ class RunCommand(BaseCommand):
 
         return task
 
-    def _create_evaluators(self, names: Optional[List[str]]) -> Sequence[BaseEvaluator]:
+    def _create_evaluators(
+        self, names: Optional[List[str]], params: Optional[Dict[str, Any]] = None
+    ) -> Sequence[BaseEvaluator]:
         """Create evaluator instances from names.
 
         Args:
             names: List of evaluator names
-
+            params: Optional dictionary of parameters to pass to the evaluator
         Returns:
             List of evaluator instances
 
@@ -211,7 +214,7 @@ class RunCommand(BaseCommand):
             try:
                 # Get the evaluator class from the registry
                 evaluator_class = EvaluatorRegistry.get(name)
-                evaluator = evaluator_class()
+                evaluator = evaluator_class(**(params or {}))
                 evaluators.append(evaluator)
             except Exception as e:
                 raise HandlerError(

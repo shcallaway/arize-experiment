@@ -5,7 +5,7 @@ CLI command definitions for arize-experiment.
 import logging
 import os
 import sys
-from typing import List
+from typing import List, Optional
 
 import click
 from dotenv import load_dotenv
@@ -130,12 +130,20 @@ results can be viewed in the Arize web dashboard."""
     multiple=True,
     help="Optional tags in key=value format (can be used multiple times)",
 )
+@click.option(
+    "--agent",
+    "-a",
+    "agent_id",
+    required=False,
+    help="ID of the agent to use",
+)
 def run(
     name: str,
     dataset: str,
     task: str,
     tag: List[str],
     evaluator: List[str],
+    agent_id: Optional[str] = None,
 ) -> None:
     """Run an experiment on Arize.
 
@@ -145,12 +153,18 @@ def run(
         task: Name of the task to use
         tag: Optional tags in key=value format
         evaluator: Name of an evaluator to use
+        agent_id: ID of the agent to use
     """
     try:
         logger.info("Running experiment")
 
         # Initialize the command handler
         command = RunCommand()
+
+        evaluator_params = {
+            "agent_id": agent_id,
+            # Add other evaluator-specific parameters here
+        }
 
         # Run the experiment
         command.execute(
@@ -159,6 +173,7 @@ def run(
             task_name=task,
             raw_tags=list(tag) if tag else None,
             evaluator_names=list(evaluator) if evaluator else None,
+            evaluator_params=evaluator_params,
         )
     except Exception as e:
         error_msg = pretty_print_error(e)
