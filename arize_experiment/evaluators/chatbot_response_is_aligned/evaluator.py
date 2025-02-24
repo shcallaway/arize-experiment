@@ -99,7 +99,7 @@ class ChatbotResponseIsAlignedEvaluator(BaseEvaluator):
             ValueError: If the Mermaid graph file is not found or an error occurs during reading.
         """
         try:
-            file_path = f"./mermaid_graphs/{agent_id}.mmd"
+            file_path = f"./mmd/{agent_id}.mmd"
             with open(file_path, "r") as file:
                 mermaid_graph = file.read()
             return mermaid_graph
