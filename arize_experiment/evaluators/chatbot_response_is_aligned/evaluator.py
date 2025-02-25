@@ -38,7 +38,6 @@ SYSTEM_PROMPT = (
     "explanation: [Your explanation]"
 )
 
-
 class IsAlignedEvaluatorFormat(BaseModel):
     score: bool
     explanation: str
@@ -77,7 +76,7 @@ class ChatbotResponseIsAlignedEvaluator(BaseEvaluator):
         """
         if not agent_id:
             raise ValueError("Agent ID must be provided")
-            
+
         super().__init__()
         self._model = model
         self._temperature = temperature
@@ -102,7 +101,7 @@ class ChatbotResponseIsAlignedEvaluator(BaseEvaluator):
             ValueError: If the Mermaid graph file is not found or an error occurs during reading.
         """
         try:
-            file_path = f"./mmd/{agent_id}.mmd"
+            file_path = f"arize_experiment/evaluators/chatbot_response_is_aligned/mmd/{agent_id}.mmd"
             with open(file_path, "r") as file:
                 mermaid_graph = file.read()
             return mermaid_graph
@@ -181,14 +180,33 @@ class ChatbotResponseIsAlignedEvaluator(BaseEvaluator):
                 ),
             ]
 
-            response: ChatCompletion = self._client.chat.completions.parse(
+            response: ChatCompletion = self._client.chat.completions.create(
                 model=self._model,
                 messages=messages,
                 temperature=self._temperature,
-                response_format=IsAlignedEvaluatorFormat
+                    response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "IsAlignedEvaluatorFormat",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "score": {
+                                    "description": "The score of the response",
+                                    "type": "boolean"
+                                },
+                                "explanation": {
+                                    "description": "The explanation of the score",
+                                    "type": "string"
+                                },
+                                "additionalProperties": False,
+                            }
+                        }
+                    }
+                }
             )
 
-            content = response.choices[0].message.parsed
+            content = json.loads(response.choices[0].message.content)
 
             if content is None:
                 raise ValueError("LLM returned empty response")

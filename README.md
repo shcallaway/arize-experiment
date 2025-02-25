@@ -441,6 +441,18 @@ def test_my_custom_task_validation():
         task.validate_input(invalid_input)
 ```
 
+2. **Register the Evaluator**: 
+
+Ensure that your new evaluator is imported in the `register_all_evaluators` function located in `arize_experiment/cli/cli.py`. This step is crucial for the CLI and other components to recognize and utilize the new evaluator.
+
+```python
+# arize_experiment/cli/cli.py
+def register_all_evaluators() -> None:
+    """Register all evaluators."""
+    import arize_experiment.evaluators.my_custom_evaluator.evaluator 
+    # ... existing imports ...
+```
+
 #### Running Tests
 
 ```bash

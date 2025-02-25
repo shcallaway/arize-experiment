@@ -16,6 +16,7 @@ from openai.types.chat.chat_completion_system_message_param import (
 from openai.types.chat.chat_completion_user_message_param import (
     ChatCompletionUserMessageParam,
 )
+from pydantic import BaseModel
 
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
@@ -25,18 +26,48 @@ logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = (
-    "You will evaluate the quality of an AI agent's response in the context of a "
-    "conversation. Consider the following criteria:\n\n"
-    "1. Relevance: Does the response directly address the user's query/need?\n"
-    "2. Accuracy: Is the information provided correct and well-supported?\n"
-    "3. Clarity: Is the response clear, well-structured, and easy to understand?\n"
-    "4. Completeness: Does the response fully address all aspects of the query?\n"
-    "5. Appropriateness: Is the tone and style appropriate for the context?\n\n"
-    "Score the response on a scale of 0 to 1 (use up to 2 decimal places) and provide "
-    "a brief explanation of your rating. Format your response as:\n"
-    "Score: [0-1]\n"
-    "Explanation: [Your explanation]"
+    "You will evaluate the quality of an AI agent's response in the context of a conversation. "
+    "Consider the following criteria:\n\n"
+    "Relevance (0-1): Does the response directly address the user's query or intent? Is it aligned with the conversation context?\n"
+    "1.00: Fully relevant and directly addresses the user's input.\n"
+    "0.50: Partially relevant but somewhat off-track.\n"
+    "0.00: Completely irrelevant or ignores the user's intent.\n"
+    "Accuracy (0-1): Is the information factually correct, consistent with the script/knowledge base, and free from misleading claims?\n"
+    "1.00: Completely accurate, well-supported by facts.\n"
+    "0.50: Mostly accurate but contains minor inconsistencies.\n"
+    "0.00: Incorrect, misleading, or contradictory to known facts.\n"
+    "Clarity (0-1): Is the response well-structured, concise, and easy to understand? Does it avoid ambiguity or unnecessary complexity?\n"
+    "1.00: Clear, structured, and easily understandable.\n"
+    "0.50: Somewhat clear but could be better structured.\n"
+    "0.00: Confusing, ambiguous, or difficult to follow.\n"
+    "Completeness (0-1): Does the response fully address all aspects of the user's query? Does it omit critical information?\n"
+    "1.00: Fully complete, covering all necessary details.\n"
+    "0.50: Partially complete, missing some key elements.\n"
+    "0.00: Incomplete or unhelpful.\n"
+    "Appropriateness (0-1): Is the tone and style suitable for the context? Is it professional, engaging, and not robotic, rude, or unnatural?\n"
+    "1.00: Fully appropriate, natural, and well-suited.\n"
+    "0.50: Somewhat appropriate but slightly off in tone.\n"
+    "0.00: Inappropriate, unnatural, or poorly suited.\n"
+    "Score the response for each criterion on a scale of 0 to 1 (use up to 2 decimal places) and provide "
+    "a brief explanation of your rating. Your response must be a JSON with the following format:\n"
+    "{\n"
+    "  \"relevance\": [0-1],\n"
+    "  \"accuracy\": [0-1],\n"
+    "  \"clarity\": [0-1],\n"
+    "  \"completeness\": [0-1],\n"
+    "  \"appropriateness\": [0-1],\n"
+    "  \"explanation\": \"[Your explanation]\"\n"
+    "}"
 )
+
+
+class AcceptabilityEvaluatorFormat(BaseModel):
+    relevance: float
+    accuracy: float
+    clarity: float
+    completeness: float
+    appropriateness: float
+    explanation: str
 
 
 @EvaluatorRegistry.register("chatbot_response_is_acceptable")
@@ -78,45 +109,33 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
         """Get the evaluator name."""
         return "chatbot_response_is_acceptable"
 
-    def _parse_llm_output(self, text: str) -> Tuple[float, str]:
-        """Parse the LLM output to extract the score and explanation.
+    def _parse_llm_output(self, output: dict) -> Tuple[float, str]:
+        """Parse the LLM output to extract the scores and explanation.
 
         Args:
-            text: Raw LLM output text
+            output (dict): The structured output from the LLM.
 
         Returns:
-            Tuple of (score: float, explanation: str)
+            Tuple[float, str]: A tuple containing the average score and explanation
 
         Raises:
-            ValueError: If the output cannot be parsed
+            ValueError: If the output is missing required keys or contains invalid data.
         """
         try:
-            lines = text.strip().split("\n")
-            if len(lines) < 2:
-                raise ValueError("Output must contain score and explanation")
+            # Extract individual scores
+            relevance = float(output.get("relevance", 0))
+            accuracy = float(output.get("accuracy", 0))
+            clarity = float(output.get("clarity", 0))
+            completeness = float(output.get("completeness", 0))
+            appropriateness = float(output.get("appropriateness", 0))
+            explanation = output.get("explanation", "No explanation provided")
 
-            score_line = lines[0].lower()
-            if not score_line.startswith("score:"):
-                raise ValueError("First line must start with 'Score:'")
+            # Calculate average score
+            average_score = (relevance + accuracy + clarity + completeness + appropriateness) / 5.0
 
-            try:
-                score = float(score_line.replace("score:", "").strip())
-                if not 0 <= score <= 1:
-                    raise ValueError("Score must be between 0 and 1")
-            except ValueError:
-                raise ValueError("Invalid score format")
-
-            explanation = " ".join(lines[1:]).replace("explanation:", "", 1).strip()
-            if not explanation:
-                raise ValueError("Empty explanation")
-
-            # Remove any remaining "Explanation:" prefix after joining lines
-            if explanation.lower().startswith("explanation:"):
-                explanation = explanation[len("explanation:") :].strip()
-
-            return score, explanation
-        except Exception as e:
-            raise ValueError(f"Failed to parse LLM output: {str(e)}")
+            return average_score, explanation
+        except KeyError as e:
+            raise ValueError(f"Failed to parse LLM output: Missing key {str(e)}")
 
     def evaluate(self, task_result: TaskResult) -> EvaluationResult:
         """Evaluate the quality of the agent's response.
@@ -164,9 +183,45 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
                 model=self._model,
                 messages=messages,
                 temperature=self._temperature,
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "AcceptabilityEvaluatorFormat",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "relevance": {
+                                    "description": "Score for relevance (0-1)",
+                                    "type": "string",
+                                },
+                                "accuracy": {
+                                    "description": "Score for accuracy (0-1)",
+                                    "type": "string",
+                                },
+                                "clarity": {
+                                    "description": "Score for clarity (0-1)",
+                                    "type": "string",
+                                },
+                                "completeness": {
+                                    "description": "Score for completeness (0-1)",
+                                    "type": "string",
+                                },
+                                "appropriateness": {
+                                    "description": "Score for appropriateness (0-1)",
+                                    "type": "string",
+                                },
+                                "explanation": {
+                                    "description": "Explanation of the scores",
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": False
+                        }
+                    }
+                }
             )
 
-            content = response.choices[0].message.content
+            content = json.loads(response.choices[0].message.content)
 
             if content is None:
                 raise ValueError("LLM returned empty response")

@@ -11,7 +11,7 @@ from arize.experimental.datasets.experiments.types import EvaluationResult
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
 from arize_experiment.core.task import TaskResult
-from arize_experiment.evaluators.chatbot_response_is_acceptable import (
+from arize_experiment.evaluators.chatbot_response_is_acceptable.evaluator import (
     ChatbotResponseIsAcceptableEvaluator,
 )
 

@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 
 def register_all_evaluators() -> None:
     """Register all evaluators."""
-    import arize_experiment.evaluators.chatbot_response_is_acceptable  # noqa
-    import arize_experiment.evaluators.sentiment_classification_is_accurate  # noqa
+    import arize_experiment.evaluators.chatbot_response_is_acceptable.evaluator  # noqa
+    import arize_experiment.evaluators.sentiment_classification_is_accurate.evaluator  # noqa
+    import arize_experiment.evaluators.chatbot_response_is_aligned.evaluator  # noqa
 
 
 def register_all_tasks() -> None:
