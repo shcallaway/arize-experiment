@@ -20,23 +20,11 @@ from openai.types.chat.chat_completion_user_message_param import (
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import TaskResult
+from arize_experiment.evaluators.chatbot_response_is_aligned.prompt import SYSTEM_PROMPT
+
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
-
-
-SYSTEM_PROMPT = (
-    "You will evaluate the response of an AI agent during a conversation. Your task is to determine if it adheres to a predefined conversation flow script. "
-    "The script is represented as a Mermaid flowchart showing the expected decision points and responses. "
-    "You will receive:\n"
-    "1. A Mermaid flowchart defining the expected conversation flow\n"
-    "2. The actual conversation transcript between the AI agent and user\n"
-    "3. The specific AI response to evaluate\n\n"
-    "You need to determine whether the agent's response at that specific point in the conversation aligns with the script, and provide a score of true or false."
-    "Score the response as a boolean. Your response must be a JSON with the following format:\n"
-    "score: [true/false]\n"
-    "explanation: [Your explanation]"
-)
 
 class IsAlignedEvaluatorFormat(BaseModel):
     score: bool

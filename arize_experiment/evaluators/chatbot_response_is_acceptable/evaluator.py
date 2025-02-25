@@ -21,47 +21,11 @@ from pydantic import BaseModel
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import TaskResult
+from arize_experiment.evaluators.chatbot_response_is_acceptable.prompt import SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
 
-
-SYSTEM_PROMPT = (
-    "You will evaluate the quality of an AI agent's response in the context of a conversation. "
-    "Consider the following criteria:\n\n"
-    "Relevance (0-1): Does the response directly address the user's query or intent? Is it aligned with the conversation context?\n"
-    "1.00: Fully relevant and directly addresses the user's input.\n"
-    "0.50: Partially relevant but somewhat off-track.\n"
-    "0.00: Completely irrelevant or ignores the user's intent.\n"
-    "Accuracy (0-1): Is the information factually correct, consistent with the script/knowledge base, and free from misleading claims?\n"
-    "1.00: Completely accurate, well-supported by facts.\n"
-    "0.50: Mostly accurate but contains minor inconsistencies.\n"
-    "0.00: Incorrect, misleading, or contradictory to known facts.\n"
-    "Clarity (0-1): Is the response well-structured, concise, and easy to understand? Does it avoid ambiguity or unnecessary complexity?\n"
-    "1.00: Clear, structured, and easily understandable.\n"
-    "0.50: Somewhat clear but could be better structured.\n"
-    "0.00: Confusing, ambiguous, or difficult to follow.\n"
-    "Completeness (0-1): Does the response fully address all aspects of the user's query? Does it omit critical information?\n"
-    "1.00: Fully complete, covering all necessary details.\n"
-    "0.50: Partially complete, missing some key elements.\n"
-    "0.00: Incomplete or unhelpful.\n"
-    "Appropriateness (0-1): Is the tone and style suitable for the context? Is it professional, engaging, and not robotic, rude, or unnatural?\n"
-    "1.00: Fully appropriate, natural, and well-suited.\n"
-    "0.50: Somewhat appropriate but slightly off in tone.\n"
-    "0.00: Inappropriate, unnatural, or poorly suited.\n"
-    "Score the response for each criterion on a scale of 0 to 1 (use up to 2 decimal places) and provide "
-    "a brief explanation of your rating. Your response must be a JSON with the following format:\n"
-    "{\n"
-    "  \"relevance\": [0-1],\n"
-    "  \"accuracy\": [0-1],\n"
-    "  \"clarity\": [0-1],\n"
-    "  \"completeness\": [0-1],\n"
-    "  \"appropriateness\": [0-1],\n"
-    "  \"explanation\": \"[Your explanation]\"\n"
-    "}"
-)
-
-
-class AcceptabilityEvaluatorFormat(BaseModel):
+class IsAcceptableEvaluatorFormat(BaseModel):
     relevance: float
     accuracy: float
     clarity: float
@@ -69,6 +33,36 @@ class AcceptabilityEvaluatorFormat(BaseModel):
     appropriateness: float
     explanation: str
 
+IS_ACCEPTABLE_EVALUATOR_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "relevance": {
+            "description": "Score for relevance (0-1)",
+            "type": "string",
+        },
+        "accuracy": {
+            "description": "Score for accuracy (0-1)",
+            "type": "string",
+        },
+        "clarity": {
+            "description": "Score for clarity (0-1)",
+            "type": "string",
+        },
+        "completeness": {
+            "description": "Score for completeness (0-1)",
+            "type": "string",
+        },
+        "appropriateness": {
+            "description": "Score for appropriateness (0-1)",
+            "type": "string",
+        },
+        "explanation": {
+            "description": "Explanation of the scores",
+            "type": "string"
+        }
+    },
+    "additionalProperties": False
+}
 
 @EvaluatorRegistry.register("chatbot_response_is_acceptable")
 class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
@@ -91,6 +85,7 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         api_key: Optional[str] = None,
+        **kwargs: dict,  
     ):
         """Initialize the evaluator.
 
@@ -98,11 +93,13 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
             model: OpenAI model to use
             temperature: Model temperature (0-1)
             api_key: Optional OpenAI API key (uses env var if not provided)
+            **kwargs: Additional arguments that will be ignored
         """
         super().__init__()
         self._model = model
         self._temperature = temperature
         self._client = OpenAI(api_key=api_key) if api_key else OpenAI()
+        
 
     @property
     def name(self) -> str:
@@ -186,37 +183,8 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
                 response_format={
                     "type": "json_schema",
                     "json_schema": {
-                        "name": "AcceptabilityEvaluatorFormat",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "relevance": {
-                                    "description": "Score for relevance (0-1)",
-                                    "type": "string",
-                                },
-                                "accuracy": {
-                                    "description": "Score for accuracy (0-1)",
-                                    "type": "string",
-                                },
-                                "clarity": {
-                                    "description": "Score for clarity (0-1)",
-                                    "type": "string",
-                                },
-                                "completeness": {
-                                    "description": "Score for completeness (0-1)",
-                                    "type": "string",
-                                },
-                                "appropriateness": {
-                                    "description": "Score for appropriateness (0-1)",
-                                    "type": "string",
-                                },
-                                "explanation": {
-                                    "description": "Explanation of the scores",
-                                    "type": "string"
-                                }
-                            },
-                            "additionalProperties": False
-                        }
+                        "name": "IsAcceptableEvaluatorFormat",
+                        "schema": IS_ACCEPTABLE_EVALUATOR_SCHEMA
                     }
                 }
             )

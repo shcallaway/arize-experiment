@@ -8,21 +8,25 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from arize.experimental.datasets.experiments.types import EvaluationResult
-from openai.types.chat import ChatCompletion, ChatCompletionMessage
+from openai.types.chat import ChatCompletion
 
 from arize_experiment.core.task import TaskResult
-from arize_experiment.evaluators.chatbot_response_is_aligned.evaluator import ChatbotResponseIsAlignedEvaluator
+from arize_experiment.evaluators.chatbot_response_is_acceptable.evaluator import ChatbotResponseIsAcceptableEvaluator
 
 
 @pytest.fixture
 def mock_openai_response():
     """Create a mock OpenAI API response."""
     mock_response = MagicMock(spec=ChatCompletion)
-    mock_message = MagicMock(spec=ChatCompletionMessage)
-    mock_message.parsed = {
-        "score": True,
-        "explanation": "The response aligns with the expected script."
-    }
+    mock_message = MagicMock()
+    mock_message.content = json.dumps({
+        "relevance": 0.9,
+        "accuracy": 0.8,
+        "clarity": 0.7,
+        "completeness": 0.8,
+        "appropriateness": 0.9,
+        "explanation": "The response is relevant, accurate, clear, complete, and appropriate."
+    })
     mock_response.choices = [MagicMock(message=mock_message)]
     return mock_response
 
@@ -41,16 +45,15 @@ def mock_openai_client():
 
 def test_evaluator_initialization(mock_openai_client):
     """Test evaluator initialization with default parameters."""
-    evaluator = ChatbotResponseIsAlignedEvaluator(agent_id="test-agent")
-    assert evaluator.name == "chatbot_response_is_aligned"
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
+    assert evaluator.name == "chatbot_response_is_acceptable"
     assert evaluator._model == "gpt-4o-mini"
     assert evaluator._temperature == 0
 
 
 def test_evaluator_initialization_with_params(mock_openai_client):
     """Test evaluator initialization with custom parameters."""
-    evaluator = ChatbotResponseIsAlignedEvaluator(
-        agent_id="test-agent",
+    evaluator = ChatbotResponseIsAcceptableEvaluator(
         model="gpt-3.5-turbo",
         temperature=0.5,
         api_key="test-key"
@@ -61,21 +64,28 @@ def test_evaluator_initialization_with_params(mock_openai_client):
 
 def test_parse_llm_output_valid(mock_openai_client):
     """Test parsing valid LLM output."""
-    evaluator = ChatbotResponseIsAlignedEvaluator(agent_id="test-agent")
-    output = {"score": True, "explanation": "The response aligns with the expected script."}
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
+    output = {
+        "relevance": 0.9,
+        "accuracy": 0.8,
+        "clarity": 0.7,
+        "completeness": 0.8,
+        "appropriateness": 0.9,
+        "explanation": "The response is relevant, accurate, clear, complete, and appropriate."
+    }
     score, explanation = evaluator._parse_llm_output(output)
-    assert score is True
-    assert explanation == "The response aligns with the expected script."
+    assert score == 0.82  # (0.9 + 0.8 + 0.7 + 0.8 + 0.9) / 5
+    assert explanation == "The response is relevant, accurate, clear, complete, and appropriate."
 
 
 def test_parse_llm_output_invalid(mock_openai_client):
     """Test parsing invalid LLM output."""
-    evaluator = ChatbotResponseIsAlignedEvaluator(agent_id="test-agent")
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
     invalid_outputs = [
-        {"score": "invalid", "explanation": "test"},
-        {"score": 1.5, "explanation": "test"},
-        {"score": True},
-        {"explanation": "test"},
+        {"relevance": "invalid", "accuracy": 0.8, "clarity": 0.7, "completeness": 0.8, "appropriateness": 0.9, "explanation": "test"},
+        {"relevance": 0.9, "accuracy": 0.8, "clarity": 0.7, "completeness": 0.8, "explanation": "test"},
+        {"relevance": 0.9, "accuracy": 0.8, "clarity": 0.7, "appropriateness": 0.9, "explanation": "test"},
+        {},
     ]
     for output in invalid_outputs:
         assert isinstance(output, dict) 
@@ -84,15 +94,15 @@ def test_parse_llm_output_invalid(mock_openai_client):
 
 
 @patch("openai.OpenAI")
-def test_evaluate_success(mock_openai_client, mock_openai_response):
-    """Test successful evaluation of chatbot response alignment."""
+def test_evaluate_success(mock_openai_class, mock_openai_response):
+    """Test successful evaluation of chatbot response quality."""
     # Setup mock client
     mock_client = MagicMock()
-    mock_client.chat.completions.parse.return_value = mock_openai_response
-    mock_openai_client.return_value = mock_client
+    mock_client.chat.completions.create.return_value = mock_openai_response
+    mock_openai_class.return_value = mock_client
 
     # Create evaluator with mocked client
-    evaluator = ChatbotResponseIsAlignedEvaluator(agent_id="test-agent")
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
     evaluator._client = mock_client 
 
     # Create test task result
@@ -121,13 +131,13 @@ def test_evaluate_success(mock_openai_client, mock_openai_response):
 
     # Verify result
     assert isinstance(result, EvaluationResult)
-    assert result.score is True
-    assert result.label == "acceptable"
-    assert result.explanation == "The response aligns with the expected script."
+    assert result.score == 0.82  # (0.9 + 0.8 + 0.7 + 0.8 + 0.9) / 5
+    assert result.label == "good"
+    assert result.explanation == "The response is relevant, accurate, clear, complete, and appropriate."
 
     # Verify API call
-    mock_client.chat.completions.parse.assert_called_once()
-    call_kwargs = mock_client.chat.completions.parse.call_args[1]
+    mock_client.chat.completions.create.assert_called_once()
+    call_kwargs = mock_client.chat.completions.create.call_args[1]
     assert call_kwargs["model"] == "gpt-4o-mini"
     assert call_kwargs["temperature"] == 0
     assert len(call_kwargs["messages"]) == 2
@@ -135,7 +145,7 @@ def test_evaluate_success(mock_openai_client, mock_openai_response):
 
 def test_evaluate_missing_data(mock_openai_client):
     """Test evaluation with missing conversation or response."""
-    evaluator = ChatbotResponseIsAlignedEvaluator(agent_id="test-agent")
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
 
     # Test missing conversation (causes JSON decode error)
     task_result = TaskResult(
@@ -156,24 +166,28 @@ def test_evaluate_missing_data(mock_openai_client):
         evaluator.evaluate(task_result)
 
 
-def test_call_with_dict(mock_openai_client):
-    """Test calling evaluator with dictionary input."""
-    evaluator = ChatbotResponseIsAlignedEvaluator(agent_id="test-agent")
+def test_determine_label():
+    """Test the label determination based on score."""
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
+    
+    assert evaluator._determine_label(0.95) == "excellent"
+    assert evaluator._determine_label(0.9) == "excellent"
+    assert evaluator._determine_label(0.8) == "good"
+    assert evaluator._determine_label(0.7) == "good"
+    assert evaluator._determine_label(0.6) == "fair"
+    assert evaluator._determine_label(0.5) == "fair"
+    assert evaluator._determine_label(0.4) == "poor"
+    assert evaluator._determine_label(0.3) == "poor"
+    assert evaluator._determine_label(0.2) == "unacceptable"
+    assert evaluator._determine_label(0.0) == "unacceptable"
 
-    with patch.object(evaluator, "evaluate") as mock_evaluate:
-        mock_evaluate.return_value = EvaluationResult(
-            score=True, label="acceptable", explanation="Test explanation"
-        )
 
-        result = evaluator(
-            {
-                "dataset_row": {"conversation": ["Test message"]},
-                "output": "Test response",
-                "metadata": {},
-            }
-        )
-
-        assert isinstance(result, EvaluationResult)
-        assert result.score is True
-        assert result.label == "acceptable"
-        assert result.explanation == "Test explanation"
+def test_format_conversation():
+    """Test the conversation formatting."""
+    evaluator = ChatbotResponseIsAcceptableEvaluator()
+    
+    conversation = ["Hello", "Hi there", "How are you?", "I'm good, thanks!"]
+    formatted = evaluator._format_conversation(conversation)
+    
+    expected = "User: Hello\nAssistant: Hi there\nUser: How are you?\nAssistant: I'm good, thanks!"
+    assert formatted == expected
