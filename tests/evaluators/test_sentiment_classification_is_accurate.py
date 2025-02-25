@@ -11,7 +11,7 @@ from openai.types.chat.chat_completion import (
 )
 
 from arize_experiment.core.task import TaskResult
-from arize_experiment.evaluators.sentiment_classification_is_accurate import (
+from arize_experiment.evaluators.sentiment_classification_is_accurate.evaluator import (
     SentimentClassificationAccuracyEvaluator,
 )
 

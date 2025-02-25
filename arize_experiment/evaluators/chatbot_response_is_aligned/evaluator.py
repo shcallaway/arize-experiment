@@ -20,31 +20,23 @@ from openai.types.chat.chat_completion_user_message_param import (
 from arize_experiment.core.evaluator import BaseEvaluator
 from arize_experiment.core.evaluator_registry import EvaluatorRegistry
 from arize_experiment.core.task import TaskResult
+from arize_experiment.evaluators.chatbot_response_is_aligned.prompt import SYSTEM_PROMPT
+
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-
-SYSTEM_PROMPT = (
-    "You will evaluate the quality of an AI agent's response in the context of a "
-    "conversation. Consider the following criteria:\n\n"
-    "1. Relevance: Does the response directly address the user's query/need?\n"
-    "2. Accuracy: Is the information provided correct and well-supported?\n"
-    "3. Clarity: Is the response clear, well-structured, and easy to understand?\n"
-    "4. Completeness: Does the response fully address all aspects of the query?\n"
-    "5. Appropriateness: Is the tone and style appropriate for the context?\n\n"
-    "Score the response on a scale of 0 to 1 (use up to 2 decimal places) and provide "
-    "a brief explanation of your rating. Format your response as:\n"
-    "Score: [0-1]\n"
-    "Explanation: [Your explanation]"
-)
+class IsAlignedEvaluatorFormat(BaseModel):
+    score: bool
+    explanation: str
 
 
-@EvaluatorRegistry.register("chatbot_response_is_acceptable")
-class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
-    """Evaluates the quality of chatbot responses using OpenAI's API.
+@EvaluatorRegistry.register("chatbot_response_is_aligned")
+class ChatbotResponseIsAlignedEvaluator(BaseEvaluator):
+    """Evaluates whether a chatbot response is aligned with a conversation script
 
     This evaluator uses GPT models to analyze whether a given chatbot response
-    is appropriate, relevant, and high-quality in the context of the conversation.
+    is aligned with a conversation script.
 
     Configuration:
         {
@@ -57,6 +49,7 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
 
     def __init__(
         self,
+        agent_id: str,
         model: str = "gpt-4o-mini",
         temperature: float = 0,
         api_key: Optional[str] = None,
@@ -64,59 +57,72 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
         """Initialize the evaluator.
 
         Args:
+            agent_id: Agent ID to evaluate
             model: OpenAI model to use
             temperature: Model temperature (0-1)
             api_key: Optional OpenAI API key (uses env var if not provided)
         """
+        if not agent_id:
+            raise ValueError("Agent ID must be provided")
+
         super().__init__()
         self._model = model
         self._temperature = temperature
         self._client = OpenAI(api_key=api_key) if api_key else OpenAI()
+        self._agent_id = agent_id
 
     @property
     def name(self) -> str:
         """Get the evaluator name."""
-        return "chatbot_response_is_acceptable"
+        return "chatbot_response_is_aligned"
 
-    def _parse_llm_output(self, text: str) -> Tuple[float, str]:
-        """Parse the LLM output to extract the score and explanation.
+    def _get_script_mermaid_graph(self, agent_id: str) -> str:
+        """Retrieve the Mermaid graph for the specified agent.
 
         Args:
-            text: Raw LLM output text
+            agent_id (str): The ID of the agent whose script is to be retrieved.
 
         Returns:
-            Tuple of (score: float, explanation: str)
+            str: The Mermaid graph as a string.
 
         Raises:
-            ValueError: If the output cannot be parsed
+            ValueError: If the Mermaid graph file is not found or an error occurs during reading.
         """
         try:
-            lines = text.strip().split("\n")
-            if len(lines) < 2:
-                raise ValueError("Output must contain score and explanation")
+            file_path = f"arize_experiment/evaluators/chatbot_response_is_aligned/mmd/{agent_id}.mmd"
+            with open(file_path, "r") as file:
+                mermaid_graph = file.read()
+            return mermaid_graph
+        except FileNotFoundError:
+            raise ValueError(f"Mermaid graph file not found for agent_id: {agent_id}")
+        except Exception as e:
+            raise ValueError(f"An error occurred while reading the mermaid graph file: {str(e)}")
 
-            score_line = lines[0].lower()
-            if not score_line.startswith("score:"):
-                raise ValueError("First line must start with 'Score:'")
+    def _parse_llm_output(self, output: dict) -> Tuple[bool, str]:
+        """Extract the score and explanation from the LLM output.
 
-            try:
-                score = float(score_line.replace("score:", "").strip())
-                if not 0 <= score <= 1:
-                    raise ValueError("Score must be between 0 and 1")
-            except ValueError:
-                raise ValueError("Invalid score format")
+        Args:
+            output (dict): The structured output from the LLM.
 
-            explanation = " ".join(lines[1:]).replace("explanation:", "", 1).strip()
+        Returns:
+            Tuple[bool, str]: A tuple containing the score (as a boolean) and the explanation (as a string).
+
+        Raises:
+            ValueError: If the output is missing required keys or contains invalid data.
+        """
+        try:
+            score = output.get("score")
+            explanation = output.get("explanation")
+
+            if not isinstance(score, bool):
+                raise ValueError("Score must be a boolean")
+
             if not explanation:
                 raise ValueError("Empty explanation")
 
-            # Remove any remaining "Explanation:" prefix after joining lines
-            if explanation.lower().startswith("explanation:"):
-                explanation = explanation[len("explanation:") :].strip()
-
             return score, explanation
-        except Exception as e:
-            raise ValueError(f"Failed to parse LLM output: {str(e)}")
+        except KeyError as e:
+            raise ValueError(f"Failed to parse LLM output: Missing key {str(e)}")
 
     def evaluate(self, task_result: TaskResult) -> EvaluationResult:
         """Evaluate the quality of the agent's response.
@@ -145,6 +151,7 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
         try:
             # Format conversation context
             formatted_conversation = self._format_conversation(conversation)
+            mermaid_graph = self._get_script_mermaid_graph(self._agent_id)
 
             messages: List[ChatCompletionMessageParam] = [
                 ChatCompletionSystemMessageParam(
@@ -154,6 +161,7 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
                 ChatCompletionUserMessageParam(
                     role="user",
                     content=(
+                        f"Mermaid graph of the sales script: \n {mermaid_graph}"
                         f"Conversation:\n{formatted_conversation}\n\n"
                         f"Agent Response to Evaluate:\n{agent_response}"
                     ),
@@ -164,9 +172,29 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
                 model=self._model,
                 messages=messages,
                 temperature=self._temperature,
+                    response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "IsAlignedEvaluatorFormat",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "score": {
+                                    "description": "The score of the response",
+                                    "type": "boolean"
+                                },
+                                "explanation": {
+                                    "description": "The explanation of the score",
+                                    "type": "string"
+                                },
+                                "additionalProperties": False,
+                            }
+                        }
+                    }
+                }
             )
 
-            content = response.choices[0].message.content
+            content = json.loads(response.choices[0].message.content)
 
             if content is None:
                 raise ValueError("LLM returned empty response")
@@ -191,7 +219,7 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
             )
 
     def _format_conversation(self, conversation: List[str]) -> str:
-        """Format the conversation for the LLM.
+        """Format the conversation for input to the LLM.
 
         Args:
             conversation: The conversation to format
@@ -218,22 +246,14 @@ class ChatbotResponseIsAcceptableEvaluator(BaseEvaluator):
             task_result.output.get("response", ""),
         )
 
-    def _determine_label(self, score: float) -> str:
+    def _determine_label(self, score: bool) -> str:
         """Determine the label for the given score.
 
         Args:
-            score: The score to determine the label for
+            score (bool): The score to evaluate.
 
         Returns:
-            The label for the given score
+            str: The label corresponding to the score, either "acceptable" or "unacceptable".
         """
-        if score >= 0.9:
-            return "excellent"
-        elif score >= 0.7:
-            return "good"
-        elif score >= 0.5:
-            return "fair"
-        elif score >= 0.3:
-            return "poor"
-        else:
-            return "unacceptable"
+        return "acceptable" if score else "unacceptable"
+        
