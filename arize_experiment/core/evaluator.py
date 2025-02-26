@@ -152,3 +152,28 @@ class BaseEvaluator(ABC):
         if isinstance(task_result, dict):
             task_result = TaskResult(**task_result)
         return self.evaluate(task_result)
+    # @final
+    # def __call__(self, task_result: TaskResult | dict[str, Any] | Any, dataset_row: dict[str, Any] = None) -> EvaluationResult:
+    #     """Make the evaluator callable by delegating to evaluate.
+        
+    #     This allows evaluators to be used directly as functions.
+        
+    #     Args:
+    #         task_result: TaskResult to evaluate, or a Task instance
+    #         dataset_row: Dataset row to pass to the task (only used if task_result is a Task)
+            
+    #     Returns:
+    #         EvaluationResult: The evaluation result
+            
+    #     Raises:
+    #         EvaluatorError: If evaluation fails
+    #         ValueError: If input format is invalid
+    #     """
+    #     # Check if task_result has an execute_with_result method (is a Task)
+    #     if hasattr(task_result, 'execute_with_result') and callable(getattr(task_result, 'execute_with_result')):
+    #         if dataset_row is None:
+    #             raise ValueError("dataset_row must be provided when passing a Task")
+    #         task_result = task_result.execute_with_result(dataset_row)
+    #     elif isinstance(task_result, dict):
+    #         task_result = TaskResult(**task_result)
+    #     return self.evaluate(task_result)
