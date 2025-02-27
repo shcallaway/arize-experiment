@@ -156,19 +156,43 @@ class Task(ABC):
         return f"{self.__class__.__name__}(name={self.name})"
 
     @final
-    def __call__(self, dataset_row: Dict[str, Any]) -> Any:
+    def __call__(self, dataset_row: Dict[str, Any], return_full_result: bool = False) -> Any:
         """Make the task callable by delegating to execute.
-
-        This allows tasks to be used directly as functions. It unwraps
-        the TaskResult and returns just the output, or raises an error
-        if execution failed.
-
+        
+        This allows tasks to be used directly as functions. By default, it unwraps
+        the TaskResult and returns just the output. If return_full_result is True,
+        it returns the full TaskResult object.
+        
         Args:
             dataset_row: A single row from the dataset to execute the task on
-
+            return_full_result: If True, returns the full TaskResult; if False,
+                            returns just the output field
+            
         Returns:
-            The TaskResult object returned by the task's execute method
-
+            Either the output field from TaskResult or the full TaskResult object
+            
+        Raises:
+            TaskError: If the task fails to execute
+        """
+        result = self.execute(dataset_row)
+        if result.error:
+            raise TaskError(result.error)
+        
+        return result if return_full_result else result.output
+    
+    @final
+    def execute_with_result(self, dataset_row: Dict[str, Any]) -> TaskResult:
+        """Execute the task and return the full TaskResult.
+        
+        Unlike __call__, this method returns the complete TaskResult object,
+        which is useful for evaluators that need access to metadata and other fields.
+        
+        Args:
+            dataset_row: A single row from the dataset to execute the task on
+            
+        Returns:
+            The complete TaskResult object
+            
         Raises:
             TaskError: If the task fails to execute
         """
