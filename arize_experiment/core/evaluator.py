@@ -39,6 +39,7 @@ Example:
 
 from abc import ABC, abstractmethod
 from typing import Any, final
+import logging
 
 from arize.experimental.datasets.experiments.types import EvaluationResult
 
@@ -134,21 +135,38 @@ class BaseEvaluator(ABC):
         pass
 
     @final
-    def __call__(self, task_result: TaskResult | dict[str, Any]) -> EvaluationResult:
+    def __call__(self, task_result: Any) -> EvaluationResult:
         """Make the evaluator callable by delegating to evaluate.
-
-        This allows evaluators to be used directly as functions.
-
+        
         Args:
-            task_result: TaskResult to evaluate
-
+            task_result: The task result to evaluate. This can be:
+                - A TaskResult object
+                - A dictionary representation of a TaskResult
+                - The output of a task (in which case we need to wrap it)
+                
         Returns:
             EvaluationResult: The evaluation result
-
+            
         Raises:
             EvaluatorError: If evaluation fails
             ValueError: If input format is invalid
         """
-        if isinstance(task_result, dict):
-            task_result = TaskResult(**task_result)
-        return self.evaluate(task_result)
+        if isinstance(task_result, TaskResult):
+            return self.evaluate(task_result)
+        elif isinstance(task_result, dict) and all(k in task_result for k in ['dataset_row', 'output']):
+            return self.evaluate(TaskResult(**task_result))
+        else:
+            # If we just got the output (like a string), we need to create a TaskResult
+            # This is a fallback and should generate a warning
+            logging.warning(
+                "Evaluator received task output instead of TaskResult. "
+                "This may cause issues if the evaluator needs access to metadata or input. "
+                "Consider using task(dataset_row, return_full_result=True) instead."
+            )
+            # We can't properly reconstruct the original dataset_row
+            dummy_task_result = TaskResult(
+                dataset_row={"input": task_result if isinstance(task_result, str) else str(task_result)},
+                output=task_result,
+                metadata={}
+            )
+            return self.evaluate(dummy_task_result)
